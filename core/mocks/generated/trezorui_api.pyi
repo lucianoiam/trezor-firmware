@@ -614,8 +614,8 @@ def show_group_share_success(
 def show_homescreen(
     *,
     label: str,
-    notification: str | None,
-    notification_level: int = 0,
+    notification: str | None = None,
+    notification_level: int,
     lockable: bool,
     skip_first_paint: bool,
 ) -> LayoutObj[UiResult]:
@@ -866,6 +866,15 @@ class AttachType:
     SWIPE_DOWN: ClassVar[int]
     SWIPE_LEFT: ClassVar[int]
     SWIPE_RIGHT: ClassVar[int]
+
+
+# rust/src/ui/api/firmware_micropython.rs
+class NotificationLevel:
+    """Notification level determining the style of notification."""
+    ALERT: ClassVar[int]
+    WARNING: ClassVar[int]
+    INFO: ClassVar[int]
+    SUCCESS: ClassVar[int]
 
 
 # rust/src/ui/api/firmware_micropython.rs

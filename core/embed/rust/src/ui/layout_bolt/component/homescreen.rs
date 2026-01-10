@@ -14,6 +14,7 @@ use crate::{
         event::TouchEvent,
         geometry::{Alignment, Alignment2D, Insets, Offset, Point, Rect},
         layout::util::get_user_custom_image,
+        notification::{Notification, NotificationLevel},
         shape::{self, Renderer},
     },
 };
@@ -56,7 +57,7 @@ pub struct HomescreenNotification {
 
 pub struct Homescreen {
     label: TString<'static>,
-    notification: Option<(TString<'static>, u8)>,
+    notification: Option<Notification>,
     image: BinaryData<'static>,
     hold_to_lock: bool,
     loader: Loader,
@@ -73,7 +74,7 @@ pub enum HomescreenMsg {
 impl Homescreen {
     pub fn new(
         label: TString<'static>,
-        notification: Option<(TString<'static>, u8)>,
+        notification: Option<Notification>,
         hold_to_lock: bool,
     ) -> Self {
         Self {
@@ -88,27 +89,27 @@ impl Homescreen {
         }
     }
 
-    fn level_to_style(level: u8) -> (Color, Icon) {
+    fn level_to_style(level: NotificationLevel) -> (Color, Icon) {
         match level {
-            3 => (theme::YELLOW, theme::ICON_COINJOIN),
-            2 => (theme::VIOLET, theme::ICON_MAGIC),
-            1 => (theme::YELLOW, theme::ICON_WARN),
+            NotificationLevel::Success => (theme::YELLOW, theme::ICON_COINJOIN),
+            NotificationLevel::Info => (theme::VIOLET, theme::ICON_MAGIC),
+            NotificationLevel::Warning => (theme::YELLOW, theme::ICON_WARN),
             _ => (theme::RED, theme::ICON_WARN),
         }
     }
 
     fn get_notification(&self) -> Option<HomescreenNotification> {
         if !usb_configured() {
-            let (color, icon) = Self::level_to_style(0);
+            let (color, icon) = Self::level_to_style(NotificationLevel::Alert);
             Some(HomescreenNotification {
                 text: TR::homescreen__title_no_usb_connection.into(),
                 icon,
                 color,
             })
-        } else if let Some((notification, level)) = self.notification {
-            let (color, icon) = Self::level_to_style(level);
+        } else if let Some(notification) = &self.notification {
+            let (color, icon) = Self::level_to_style(notification.level);
             Some(HomescreenNotification {
-                text: notification,
+                text: notification.text,
                 icon,
                 color,
             })
