@@ -4,6 +4,7 @@ import pytest
 
 from trezorlib.debuglink import SessionDebugWrapper as Session
 from trezorlib.debuglink import TrezorClientDebugLink as Client
+from trezorlib.exceptions import TrezorFailure
 from trezorlib.messages import (
     EvoluDelegatedIdentityKey,
     EvoluGetDelegatedIdentityKey,
@@ -50,6 +51,20 @@ def pair_and_get_credential(client: Client) -> ThpPairingResult:
     return ThpPairingResult(session, credential_response)
 
 
+def pair_and_get_invalid_credential(client: Client) -> ThpPairingResult:
+    pairing_result = pair_and_get_credential(client)
+    credential = pairing_result.credential.credential
+
+    # Corrupt the credential to make it invalid
+    invalid_credential = (
+        credential[:-2]
+        + bytes([credential[-2] ^ 0xFF])
+        + bytes([credential[-1] ^ 0xFF])
+    )
+    pairing_result.credential.credential = invalid_credential
+    return pairing_result
+
+
 def test_evolu_get_delegated_identity_is_constant(client: Client):
     pairing_data = pair_and_get_credential(client)
     credential_data = pairing_data.credential
@@ -92,3 +107,32 @@ def test_evolu_get_delegated_identity_test_vector(client: Client):
     assert private_key == bytes.fromhex(
         "10e39ed3a40dd63a47a14608d4bccd4501170cf9f2188223208084d39c37b369"
     )
+
+
+def test_evolu_get_delegated_identity_invalid_credential(client: Client):
+    pairing_data = pair_and_get_invalid_credential(client)
+    credential_data = pairing_data.credential
+    session = pairing_data.session
+
+    with pytest.raises(TrezorFailure, match="Invalid credential"):
+        session.call(
+            EvoluGetDelegatedIdentityKey(
+                thp_credential=credential_data.credential,
+            ),
+            expect=EvoluDelegatedIdentityKey,
+        )
+
+
+def test_evolu_get_delegated_identity_missing_credential(client: Client):
+    pairing_data = pair_and_get_credential(client)
+    session = pairing_data.session
+
+    with pytest.raises(
+        TrezorFailure, match="THP credentials must be provided when THP is enabled"
+    ):
+        session.call(
+            EvoluGetDelegatedIdentityKey(
+                thp_credential=None,  # Missing credential
+            ),
+            expect=EvoluDelegatedIdentityKey,
+        )

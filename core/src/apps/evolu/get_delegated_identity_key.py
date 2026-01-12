@@ -60,18 +60,19 @@ if utils.USE_THP:
         from trezor import TR
         from trezor.ui.layouts import confirm_action
         from trezor.wire.context import get_channel_context
+        from trezor.wire.errors import DataError
 
         from apps.thp.credential_manager import decode_credential, validate_credential
 
         if msg.thp_credential is None:
-            raise ValueError("THP credentials must be provided when THP is enabled")
+            raise DataError("THP credential must be provided when THP is enabled")
         credential_received = decode_credential(msg.thp_credential)
         host_static_public_key = (
             get_channel_context().channel_cache.get_host_static_public_key()
         )
 
         if not validate_credential(credential_received, host_static_public_key):
-            raise ValueError("Invalid credential")
+            raise DataError("Invalid credential")
 
         app_name = credential_received.cred_metadata.app_name
         host_name = credential_received.cred_metadata.host_name
