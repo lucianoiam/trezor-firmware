@@ -83,6 +83,7 @@ def test_evolu_get_delegated_identity_is_constant(client: Client):
     response_2 = session.call(
         EvoluGetDelegatedIdentityKey(
             thp_credential=credential_data.credential,
+            _host_static_public_key=TEST_host_static_public_key,
         ),
         expect=EvoluDelegatedIdentityKey,
     )
@@ -114,7 +115,7 @@ def test_evolu_get_delegated_identity_invalid_credential(client: Client):
     credential_data = pairing_data.credential
     session = pairing_data.session
 
-    with pytest.raises(TrezorFailure, match="Invalid credential"):
+    with pytest.raises(TrezorFailure, match="DataError: Invalid credential"):
         session.call(
             EvoluGetDelegatedIdentityKey(
                 thp_credential=credential_data.credential,
@@ -128,7 +129,8 @@ def test_evolu_get_delegated_identity_missing_credential(client: Client):
     session = pairing_data.session
 
     with pytest.raises(
-        TrezorFailure, match="THP credentials must be provided when THP is enabled"
+        TrezorFailure,
+        match="DataError: THP credential must be provided when THP is enabled",
     ):
         session.call(
             EvoluGetDelegatedIdentityKey(
