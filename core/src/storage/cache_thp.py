@@ -82,6 +82,12 @@ class ChannelCache(ThpDataCache):
             raise ValueError("Invalid key length")
         self.set(CHANNEL_HOST_STATIC_PUBKEY, key)
 
+    def get_host_static_public_key(self) -> bytes:
+        key = self.get(CHANNEL_HOST_STATIC_PUBKEY)
+        if key is None:
+            raise ValueError("Host static public key is not set in the channel cache.")
+        return key
+
 
 class SessionThpCache(ThpDataCache):
     def __init__(self) -> None:
