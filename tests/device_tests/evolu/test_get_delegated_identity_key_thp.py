@@ -83,7 +83,6 @@ def test_evolu_get_delegated_identity_is_constant(client: Client):
     response_2 = session.call(
         EvoluGetDelegatedIdentityKey(
             thp_credential=credential_data.credential,
-            _host_static_public_key=TEST_host_static_public_key,
         ),
         expect=EvoluDelegatedIdentityKey,
     )
