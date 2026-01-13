@@ -113,10 +113,10 @@ class Storage:
     def get_pin_rem(self) -> int:
         return consts.PIN_MAX_TRIES - self.pin_log.get_failures_count()
 
-    def change_pin(self, newpin: str, oldpin: str = "") -> bool:
+    def change_pin(self, newpin: str, oldpin: str | None = None) -> bool:
         if not self.initialized or not self.unlocked:
             return False
-        if oldpin:
+        if oldpin is not None:
             if not self.check_pin(oldpin):
                 return False
         self._set_pin(newpin)
