@@ -242,9 +242,34 @@ const display_configuration_t g_disp_conf[] = {
 
     .dsi_pixel_format = DSI_RGB888,
   },
+  { /* 62MHz, 18.518519MHz, 430px, RGB565 */ 
+    .dsi_lane_byte_freq_hz = 62000000ULL,
+    .pll_dsi_ndiv = 62,
+    .pll_dsi_odf = 2,
+    .dsi_dphy_frange = DSI_DPHY_FRANGE_450MHZ_510MHZ,
+    .dsi_tx_escape_clk_div = 4, /* 15.5MHz, ~7.75MHz (in LP) */
+
+    .phy_timer_clk_hs2lp = 11,
+    .phy_timer_clk_lp2hs = 40,
+    .phy_timer_data_hs2lp = 12,
+    .phy_timer_data_lp2hs = 23,
+
+    .ltdc_pixel_clock_hz = 18518519ULL,
+    .pll3_n = 125,
+    .pll3_r = 27,
+
+    .dsi_byte_clk_to_pixel_clk_ratio = 62.0f / 18.518519f,
+
+    .vfp = {2836 /*10Hz*/, 1144 /*20Hz*/, 580 /*30Hz*/, 298 /*40Hz*/, 129 /*50Hz*/, 16 /*60Hz*/},
+    .hfp = 106,
+    .hact = 430,
+    .lcd_width = 430,
+
+    .dsi_pixel_format = DSI_RGB565,
+  },
 };
 
-const uint8_t conf_idx = 7;
+const uint8_t conf_idx = 1;
 
 static void display_pll_deinit(void) { __HAL_RCC_PLL3_DISABLE(); }
 
