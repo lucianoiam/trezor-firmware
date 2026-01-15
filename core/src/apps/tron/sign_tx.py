@@ -119,17 +119,18 @@ async def process_smart_contract(
     contract: TronTriggerSmartContract, fee_limit: int
 ) -> None:
     token = get_token_info(contract.contract_address)
-    if token is not UNKNOWN_TOKEN and len(contract.data) == 68:
+    if token and len(contract.data) == 68:
         result = await process_known_trc20_contract(contract, token, fee_limit)
         if result:
             return None
-    await layout.confirm_unkown_smart_contract(contract, fee_limit)
+    await layout.confirm_unknown_smart_contract(contract, fee_limit)
 
 
 # TODO: Maybe refactor with ETH. Code duplicated from ethereum/sign_tx.py:_handle_known_contract_calls
 async def process_known_trc20_contract(
     contract: TronTriggerSmartContract, token: EthereumTokenInfo, fee_limit: int
-) -> None | bool:
+) -> bool:
+    """Returns False when the contract is unrecoginsed. i.e. not (Transfer and known TRC-20)"""
     from trezor.utils import BufferReader
 
     from ..ethereum.sc_constants import (
@@ -143,25 +144,26 @@ async def process_known_trc20_contract(
     func_sig = data_reader.read_memoryview(SC_FUNC_SIG_BYTES)
     if func_sig == SC_FUNC_SIG_TRANSFER:
         if data_reader.remaining_count() < SC_ARGUMENT_BYTES * 2:
-            return None
+            return False
         arg0 = data_reader.read_memoryview(SC_ARGUMENT_BYTES)
         assert all(
             byte == 0 for byte in arg0[: SC_ARGUMENT_BYTES - SC_ARGUMENT_ADDRESS_BYTES]
         )
+        # TRON truncates the mandatory prefix \x41 from addresses in data
         recipient = b"\x41" + bytes(
             arg0[SC_ARGUMENT_BYTES - SC_ARGUMENT_ADDRESS_BYTES :]
         )
         arg1 = data_reader.read_memoryview(SC_ARGUMENT_BYTES)
         value = int.from_bytes(arg1, "big")
     else:
-        return None
+        return False
 
     await layout.confirm_known_trc20_smart_contract(recipient, value, fee_limit, token)
     return True  # Couldn't figure out a better way to indicate success here.
 
 
-# TODO: Place holder for actual logic
-def get_token_info(token_address: AnyBytes) -> EthereumTokenInfo:
+# TODO: Placeholder for actual logic
+def get_token_info(token_address: AnyBytes) -> EthereumTokenInfo | None:
     # Shasta testnet USDT
     if (
         token_address
@@ -175,4 +177,4 @@ def get_token_info(token_address: AnyBytes) -> EthereumTokenInfo:
             symbol="tUSDT",
         )
     else:
-        return UNKNOWN_TOKEN  # TODO: Wei Not used in TRON.
+        return None

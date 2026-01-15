@@ -33,7 +33,7 @@ async def confirm_transfer_contract(contract: TronTransferContract) -> None:
     to_address = get_encoded_address(contract.to_address)
 
     await layouts.confirm_address(
-        f"{TR.send__title_sending_to}",
+        TR.send__title_sending_to,
         to_address,
         chunkify=True,
     )
@@ -78,22 +78,11 @@ async def confirm_unkown_smart_contract(
 async def confirm_known_trc20_smart_contract(
     recipient_addr: bytes, amount: int, fee_limit: int, token: EthereumTokenInfo
 ) -> None:
-    from trezor.ui.layouts import confirm_ethereum_approve
+    from trezor.ui.layouts import confirm_tron_approve
 
-    await confirm_ethereum_approve(
+    await confirm_tron_approve(
         recipient_addr=get_encoded_address(recipient_addr),
-        recipient_str=None,
-        is_unknown_token=False,
-        token_address=get_encoded_address(token.address),
-        token_symbol=token.symbol,
-        is_unknown_network=False,
-        chain_id="",
-        network_name="Tron",
-        is_revoke=False,
         total_amount=format_token_amount(amount, token),
-        account=None,
-        account_path=None,
         maximum_fee=format_energy_amount(fee_limit),
-        fee_info_items=[],
         chunkify=True,
     )

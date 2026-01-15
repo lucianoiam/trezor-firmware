@@ -17,6 +17,6 @@ def address_from_public_key(pubkey: bytes) -> str:
 def get_encoded_address(address_bytes: AnyBytes) -> str:
     """Encodes raw address bytes into Tron format."""
     address = base58.encode_check(address_bytes)
-    if len(address) != 34 or not address[0] == "T":
+    if len(address) != 34 or address[0] != "T":
         raise ValueError("Tron: Invalid address")
     return address
