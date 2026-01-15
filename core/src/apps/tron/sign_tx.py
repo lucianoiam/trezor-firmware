@@ -8,7 +8,6 @@ from trezor.wire import DataError
 
 from apps.common.keychain import with_slip44_keychain
 
-from ..ethereum.tokens import UNKNOWN_TOKEN
 from . import CURVE, PATTERN, SLIP44_ID, consts, layout
 
 if TYPE_CHECKING:

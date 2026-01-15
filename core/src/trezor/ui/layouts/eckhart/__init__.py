@@ -1506,17 +1506,13 @@ if not utils.BITCOIN_ONLY:
             )
 
             properties: list[PropertyType] = [
-                    (
-                        f"{TR.ethereum__approve_amount_allowance}:",
-                        total_amount,
-                        False,
-                    ),
-                    (
-                        f"{TR.words__chain}:",
-                        "Tron",
-                        True
-                    )
-                ]
+                (
+                    f"{TR.ethereum__approve_amount_allowance}:",
+                    total_amount,
+                    False,
+                ),
+                (f"{TR.words__chain}:", "Tron", True),
+            ]
 
             await confirm_properties(
                 br_name,

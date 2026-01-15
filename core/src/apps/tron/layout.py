@@ -40,7 +40,7 @@ async def confirm_transfer_contract(contract: TronTransferContract) -> None:
 
 
 # TODO: Refactor ETH references to crypto-neutral references.
-async def confirm_unkown_smart_contract(
+async def confirm_unknown_smart_contract(
     contract: TronTriggerSmartContract, fee_limit: int
 ) -> None:
 
