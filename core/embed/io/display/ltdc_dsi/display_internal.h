@@ -88,7 +88,7 @@ typedef struct {
   // The current frame buffer selector
 
   volatile display_refresh_rate_state_t refresh_rate_state;
-  volatile uint32_t refresh_rate_vfp;
+  volatile display_refresh_rate_t refresh_rate;
 
   DSI_HandleTypeDef hlcd_dsi;
   LTDC_HandleTypeDef hlcd_ltdc;

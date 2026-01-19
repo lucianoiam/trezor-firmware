@@ -52,12 +52,9 @@ typedef enum {
   DISPLAY_RETAIN_CONTENT
 } display_content_mode_t;
 
+#ifdef KERNEL_MODE
 
-typedef enum {
-  DISPLAY_REFRESH_RATE_IDLE,
-  DISPLAY_REFRESH_RATE_REQUESTED,
-  DISPLAY_REFRESH_RATE_UPDATING
-} display_refresh_rate_state_t;
+#define REFRESH_RATE_POLLING 1
 
 typedef enum {
   DISPLAY_REFRESH_RATE_10HZ = 0, // not used
@@ -69,8 +66,11 @@ typedef enum {
   DISPLAY_REFRESH_RATE_COUNT // Number of refresh rate options
 } display_refresh_rate_t;
 
-
-#ifdef KERNEL_MODE
+typedef enum {
+  DISPLAY_REFRESH_RATE_IDLE,
+  DISPLAY_REFRESH_RATE_REQUESTED,
+  DISPLAY_REFRESH_RATE_UPDATING
+} display_refresh_rate_state_t;
 
 // Initializes the display controller.
 //
@@ -92,17 +92,11 @@ void display_deinit(display_content_mode_t mode);
 // perspective of the GTZC (Global TrustZone Controller).
 void display_set_unpriv_access(bool unpriv);
 
-#if 0
-void display_refresh_rate_sm_main(void);
-#endif
-
-#if 0
-void display_refresh_rate_set(uint32_t new_vfp);
-#else
 void display_refresh_rate_set(display_refresh_rate_t refresh_rate);
+
+#if !REFRESH_RATE_POLLING
 void display_refresh_rate_config(void);
 #endif
-
 
 #endif  // KERNEL_MODE
 

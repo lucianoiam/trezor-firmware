@@ -110,7 +110,8 @@
 #include "../../io/display/ltdc_dsi/display_internal.h"
 
 extern volatile uint32_t refresh_counter;
-extern uint32_t busy_wait_cycles_max;
+extern uint32_t refresh_rate_change_tryouts;
+extern uint32_t timeout_max;
 
 void drivers_init() {
 #ifdef SECURE_MODE
@@ -204,7 +205,10 @@ void drivers_init() {
 //
 // Returns when the coreapp task is terminated
 static void kernel_loop(applet_t *coreapp) {
-  uint32_t time = 0;
+  uint32_t time0 = ticks();
+  uint32_t time1 = time0 + 1000; //TODO: there is problem at transition
+  //from bootloader to FW with screen "flicker" of text "Trezor Safe 7"... The
+  //1000 ms timeout is to avoid that problem. Needs investigation.
 
 #if SECURE_MODE && USE_STORAGE_HWKEY
   secure_aes_set_applet(coreapp);
@@ -224,23 +228,27 @@ static void kernel_loop(applet_t *coreapp) {
       syscall_ipc_dequeue();
     }
 
-    if (ticks() >= time) {
+    uint32_t time_tmp = ticks();
+
+    if (time_tmp > time1) {
+      static display_refresh_rate_t refresh_rate = DISPLAY_REFRESH_RATE_60HZ;
       float frequency;
 
       irq_key_t key = irq_lock();
-      frequency = refresh_counter / 1.0f;
+      frequency = refresh_counter / (float)(time_tmp - time0);
       refresh_counter = 0;
       irq_unlock(key);
 
-      static display_refresh_rate_t refresh_rate = DISPLAY_REFRESH_RATE_60HZ;
-
-      dbg_printf("frequency=%d.%d, busy_wait_cycles_max=%d \n", (int)frequency, (int)((frequency-(int)frequency)*100), (int)busy_wait_cycles_max);
+      //TODO: to revise the printed text
+      dbg_printf("frequency=%d.%d, refresh_rate_change_tryouts=%d, timeout_max=%d \n", (int)frequency, (int)((frequency-(int)frequency)*100), (int)refresh_rate_change_tryouts, (int)timeout_max);
+      UNUSED(frequency);
 
       refresh_rate = refresh_rate == DISPLAY_REFRESH_RATE_30HZ ? DISPLAY_REFRESH_RATE_60HZ : DISPLAY_REFRESH_RATE_30HZ;
 
       display_refresh_rate_set(refresh_rate);
 
-      time = ticks_timeout(1000);      
+      time0 = time_tmp;
+      time1 = time0 + 100; //100ms period
     }
 
   } while (applet_is_alive(coreapp));

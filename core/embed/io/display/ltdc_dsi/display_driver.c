@@ -315,8 +315,8 @@ const display_configuration_t g_disp_conf[] = {
 };
 
 const uint8_t conf_idx = 0;
-//uint32_t busy_wait_max = 0;
-uint32_t busy_wait_cycles_max = 0;
+uint32_t refresh_rate_change_tryouts = 0;
+uint32_t timeout_max = 0;
 
 static void display_pll_deinit(void) { __HAL_RCC_PLL3_DISABLE(); }
 
@@ -741,78 +741,6 @@ void display_deinit(display_content_mode_t mode) {
   memset(drv, 0, sizeof(display_driver_t));
 }
 
-#if 0
-//TODO: busy waiting implementation
-void display_refresh_rate_set(uint32_t new_vfp) {
-  display_driver_t *drv = &g_display_driver;
-  irq_key_t key;
-
-  if (!drv->initialized) {
-    return;
-  }
-
-  key = irq_lock();
-
-  while ((drv->hlcd_ltdc.Instance->CDSR & LTDC_CDSR_VSYNCS_Msk) != 0)
-    continue;
-
-  while ((drv->hlcd_ltdc.Instance->CDSR & LTDC_CDSR_VSYNCS_Msk) == 0)
-    continue;
-
-  drv->hlcd_ltdc.Instance->GCR &= ~LTDC_GCR_LTDCEN;
-  drv->hlcd_dsi.Instance->CR &= ~DSI_CR_EN;
-
-  drv->DSIVidCfg.VerticalFrontPorch = new_vfp;
-  drv->hlcd_ltdc.Init.TotalHeigh = drv->hlcd_ltdc.Init.AccumulatedActiveH +
-                                   drv->DSIVidCfg.VerticalFrontPorch;
-
-  /* Set the Vertical Front Porch (VFP)*/
-  drv->hlcd_dsi.Instance->VVFPCR &= ~(DSI_VVFPCR_VFP);
-  drv->hlcd_dsi.Instance->VVFPCR |= drv->DSIVidCfg.VerticalFrontPorch;  
-
-  /* Set Total Height */
-  drv->hlcd_ltdc.Instance->TWCR &= ~(LTDC_TWCR_TOTALH) /*~0xFFFF*/;
-  drv->hlcd_ltdc.Instance->TWCR |= drv->hlcd_ltdc.Init.TotalHeigh;
-
-  drv->hlcd_dsi.Instance->CR |= DSI_CR_EN;
-  drv->hlcd_ltdc.Instance->GCR |= LTDC_GCR_LTDCEN;
-
-  irq_unlock(key);
-
-
-  // if ((drv->hlcd_ltdc.Instance->CDSR & LTDC_CDSR_VSYNCS_Msk) == 0) {
-  //   //uint32_t busy_wait = 0;
-  //   uint64_t busy_wait_cycles;
-
-  //   busy_wait_cycles = systick_cycles();
-
-  //   while ((drv->hlcd_ltdc.Instance->CDSR & LTDC_CDSR_VSYNCS_Msk) == 0) {
-  //     //busy_wait++;
-  //     continue;
-  //   }
-
-  //   busy_wait_cycles = systick_cycles() - busy_wait_cycles;
-  //   busy_wait_cycles_max = MAX(busy_wait_cycles_max, (uint32_t)busy_wait_cycles);
-
-  //   //busy_wait_max = MAX(busy_wait_max, busy_wait);
-
-  //   drv->hlcd_ltdc.Instance->GCR &= ~LTDC_GCR_LTDCEN;
-  //   drv->hlcd_dsi.Instance->CR &= ~DSI_CR_EN;
-
-  //   /* Set the Vertical Front Porch (VFP)*/
-  //   drv->hlcd_dsi.Instance->VVFPCR &= ~(DSI_VVFPCR_VFP);
-  //   drv->hlcd_dsi.Instance->VVFPCR |= drv->DSIVidCfg.VerticalFrontPorch;  
-
-  //   /* Set Total Height */
-  //   drv->hlcd_ltdc.Instance->TWCR &= ~0xFFFF/*~(LTDC_TWCR_TOTALH)*/;
-  //   drv->hlcd_ltdc.Instance->TWCR |= drv->hlcd_ltdc.Init.TotalHeigh;
-
-  //   drv->hlcd_dsi.Instance->CR |= DSI_CR_EN;
-  //   drv->hlcd_ltdc.Instance->GCR |= LTDC_GCR_LTDCEN;
-  // }
-
-}
-#else
 static inline uint32_t refresh_rate_vfp(display_refresh_rate_t refresh_rate) {
 #if 1
   if (refresh_rate < DISPLAY_REFRESH_RATE_COUNT) {
@@ -848,9 +776,27 @@ static inline uint32_t refresh_rate_vfp(display_refresh_rate_t refresh_rate) {
 #endif
 }
 
-#if 0
-//TODO: What to return? The problem may occur when a "line event" gets scheduled, it must not be overriden.
-void display_refresh_rate_sm_main(void) {
+static inline void display_refresh_rate_reg_config(display_driver_t *drv) {
+      //LTDC && DSI disable.
+      drv->hlcd_ltdc.Instance->GCR &= ~LTDC_GCR_LTDCEN;
+      drv->hlcd_dsi.Instance->CR &= ~DSI_CR_EN;
+
+      //Set the Vertical Front Porch (VFP).
+      drv->hlcd_dsi.Instance->VVFPCR &= ~(DSI_VVFPCR_VFP);
+      drv->hlcd_dsi.Instance->VVFPCR |= drv->DSIVidCfg.VerticalFrontPorch;  
+
+      //Set Total Height.
+      drv->hlcd_ltdc.Instance->TWCR &= ~(LTDC_TWCR_TOTALH);
+      drv->hlcd_ltdc.Instance->TWCR |= drv->hlcd_ltdc.Init.TotalHeigh;
+
+      //DSI && LTDC enable.
+      drv->hlcd_dsi.Instance->CR |= DSI_CR_EN;
+      drv->hlcd_ltdc.Instance->GCR |= LTDC_GCR_LTDCEN;
+}
+
+#if REFRESH_RATE_POLLING
+//TODO: busy waiting implementation
+void display_refresh_rate_set(display_refresh_rate_t refresh_rate) {
   display_driver_t *drv = &g_display_driver;
   irq_key_t key;
 
@@ -858,34 +804,24 @@ void display_refresh_rate_sm_main(void) {
     return;
   }
 
+  //TODO: could we disable IRQs only for the really necessary time?
   key = irq_lock();
 
-  if (drv->refresh_rate_state == DISPLAY_REFRESH_RATE_IDLE) {
-    //Nothing to do.
-  } else if (drv->refresh_rate_state == DISPLAY_REFRESH_RATE_REQUESTED) {
-    //Configure the line event for the proper time to perform VFP update.
-    HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.TotalHeigh); //TODO: what line to be set here?
+  while ((drv->hlcd_ltdc.Instance->CDSR & LTDC_CDSR_VSYNCS_Msk) != 0)
+    continue;
 
-    //The line event has been configured. Moving to the UPDATING state.
-    drv->refresh_rate_state = DISPLAY_REFRESH_RATE_UPDATING;
-  } else if (drv->refresh_rate_state == DISPLAY_REFRESH_RATE_UPDATING) {
-    display_refresh_rate_config();
+  while ((drv->hlcd_ltdc.Instance->CDSR & LTDC_CDSR_VSYNCS_Msk) == 0)
+    continue;
 
-    //TODO: move the following statement into display_refresh_rate_config?
-    //Configure the next line event for standard operation.
-    //TODO: shouldn't it be performed inside IRQ? Or we can do it here and be safe.
-    HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.AccumulatedActiveH);
+  drv->DSIVidCfg.VerticalFrontPorch = refresh_rate_vfp(refresh_rate);
+  drv->hlcd_ltdc.Init.TotalHeigh = drv->hlcd_ltdc.Init.AccumulatedActiveH +
+                                   drv->DSIVidCfg.VerticalFrontPorch;
 
-    //Updated: moving to the IDLE state.
-    //drv->refresh_rate_state = DISPLAY_REFRESH_RATE_IDLE;
-  } else {
-    //TODO: Invalid state, what to do?
-  }
-
+  display_refresh_rate_reg_config(drv);  
+ 
   irq_unlock(key);
 }
-#endif
-
+#else
 //TODO: should the function return bool to indicate success/failure?
 void display_refresh_rate_set(display_refresh_rate_t refresh_rate) {
   display_driver_t *drv = &g_display_driver;
@@ -898,11 +834,9 @@ void display_refresh_rate_set(display_refresh_rate_t refresh_rate) {
   key = irq_lock();
 
   if (drv->refresh_rate_state != DISPLAY_REFRESH_RATE_UPDATING) {
-    drv->refresh_rate_vfp = refresh_rate_vfp(refresh_rate);
+    //TODO: check the refresh rate value? Or just clamp it in the vfp function?
+    drv->refresh_rate = refresh_rate;
 
-    // drv->DSIVidCfg.VerticalFrontPorch = refresh_rate_vfp(refresh_rate);
-    // drv->hlcd_ltdc.Init.TotalHeigh = drv->hlcd_ltdc.Init.AccumulatedActiveH +
-    //                                  drv->DSIVidCfg.VerticalFrontPorch;
     //Move the state machine forward to request the update in the "Line Event"
     //IRQ handler.
     drv->refresh_rate_state = DISPLAY_REFRESH_RATE_REQUESTED;
@@ -911,7 +845,8 @@ void display_refresh_rate_set(display_refresh_rate_t refresh_rate) {
   irq_unlock(key);
 }
 
-//TODO: HAL not used due to speed.
+//TODO: this function could be called from the "polling one"
+//HAL not used due to speed.
 void display_refresh_rate_config(void) {
   display_driver_t *drv = &g_display_driver;
   irq_key_t key;
@@ -920,32 +855,49 @@ void display_refresh_rate_config(void) {
     return;
   }
 
+  //TODO: disable IRQs or make preemption possible (the function is called from
+  //IRQ context)
   key = irq_lock();
 
   if (drv->refresh_rate_state == DISPLAY_REFRESH_RATE_UPDATING) {
-    //TODO: wait for VSYNC?
-    
-    drv->DSIVidCfg.VerticalFrontPorch = drv->refresh_rate_vfp;
-    drv->hlcd_ltdc.Init.TotalHeigh = drv->hlcd_ltdc.Init.AccumulatedActiveH +
-                                     drv->DSIVidCfg.VerticalFrontPorch;    
-    //LTDC && DSI disable.
-    drv->hlcd_ltdc.Instance->GCR &= ~LTDC_GCR_LTDCEN;
-    drv->hlcd_dsi.Instance->CR &= ~DSI_CR_EN;
+    //30 us timeout, because the line takes max 29.75us at 18.518519MHz pixel
+    //clock and 544 pixel line width
+    //TODO: make the timeout configurable?
+    uint64_t timeout_us = systick_us() + 30;
+    uint64_t time_stamp;
 
-    //Set the Vertical Front Porch (VFP).
-    drv->hlcd_dsi.Instance->VVFPCR &= ~(DSI_VVFPCR_VFP);
-    drv->hlcd_dsi.Instance->VVFPCR |= drv->DSIVidCfg.VerticalFrontPorch;  
+    if ((drv->hlcd_ltdc.Instance->CDSR & LTDC_CDSR_VSYNCS_Msk) == 0) {
+      //Busy waiting for VSYNC with timeout
+      while ((drv->hlcd_ltdc.Instance->CDSR & LTDC_CDSR_VSYNCS_Msk) == 0) {
+        time_stamp = systick_us();
 
-    //Set Total Height.
-    drv->hlcd_ltdc.Instance->TWCR &= ~(LTDC_TWCR_TOTALH);
-    drv->hlcd_ltdc.Instance->TWCR |= drv->hlcd_ltdc.Init.TotalHeigh;
+        timeout_max = MAX(timeout_max, (uint32_t)(time_stamp - (timeout_us - 30)));
 
-    //DSI && LTDC enable.
-    drv->hlcd_dsi.Instance->CR |= DSI_CR_EN;
-    drv->hlcd_ltdc.Instance->GCR |= LTDC_GCR_LTDCEN;
+        if (time_stamp > timeout_us) {
+          //Failed to update, moving back to REQUESTED state to try again.
+          drv->refresh_rate_state = DISPLAY_REFRESH_RATE_REQUESTED;
 
-    //Updated: moving to the IDLE state.
-    drv->refresh_rate_state = DISPLAY_REFRESH_RATE_IDLE;
+          refresh_rate_change_tryouts++;
+
+          irq_unlock(key);
+          return;
+        }
+      }
+
+      drv->DSIVidCfg.VerticalFrontPorch = refresh_rate_vfp(drv->refresh_rate);
+      drv->hlcd_ltdc.Init.TotalHeigh = drv->hlcd_ltdc.Init.AccumulatedActiveH +
+                                      drv->DSIVidCfg.VerticalFrontPorch;    
+      
+      display_refresh_rate_reg_config(drv);
+
+      //Updated: moving to the IDLE state.
+      drv->refresh_rate_state = DISPLAY_REFRESH_RATE_IDLE;
+    } else {
+      //Failed to update, moving back to REQUESTED state to try again.
+      drv->refresh_rate_state = DISPLAY_REFRESH_RATE_REQUESTED;
+
+      refresh_rate_change_tryouts++;
+    }
   }
 
   irq_unlock(key);

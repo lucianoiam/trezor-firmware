@@ -18,6 +18,7 @@
  */
 #pragma GCC optimize("O0")
 
+#ifdef KERNEL_MODE
 #include <trezor_bsp.h>
 #include <trezor_rtl.h>
 
@@ -544,3 +545,4 @@ bool panel_init(display_driver_t *drv) {
 
   return true;
 }
+#endif
