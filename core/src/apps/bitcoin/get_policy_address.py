@@ -60,7 +60,7 @@ async def get_policy_address(
         + b"\xac\x73\x64\x76\xa9\x14"  # OP_CHECKSIG OP_IFDUP OP_NOTIF OP_DUP OP_HASH160 OP_PUSHBYTES_20
         + pk2_hash  # pk2_hash (20 bytes)
         + b"\x88\xad"  # OP_EQUALVERIFY OP_CHECKSIGVERIFY
-        + bytes([0x50 + msg.policy.blocks])  # OP_1 to OP_16
+        + bytes([0x50 + msg.policy.blocks])  # OP_1 to OP_16 (OP_PUSHNUM_n)
         + b"\xb2\x68"  # OP_CSV OP_ENDIF
     )
     print(f"script: {hexlify(script)}")
