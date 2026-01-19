@@ -43,7 +43,7 @@ display_driver_t g_display_driver = {
 
 const display_configuration_t g_disp_conf[] = {
   { /* 62MHz, 18.518519MHz, 480px, RGB888 */ 
-    .dsi_lane_byte_freq_hz = 62000000ULL,
+    .dsi_lane_byte_freq_hz = 62000000UL,
     .pll_dsi_ndiv = 62,
     .pll_dsi_odf = 2,
     .dsi_dphy_frange = DSI_DPHY_FRANGE_450MHZ_510MHZ,
@@ -54,7 +54,7 @@ const display_configuration_t g_disp_conf[] = {
     .phy_timer_data_hs2lp = 12,
     .phy_timer_data_lp2hs = 23,
 
-    .ltdc_pixel_clock_hz = 18518519ULL,
+    .ltdc_pixel_clock_hz = 18518519UL,
     .pll3_n = 125,
     .pll3_r = 27,
 
@@ -73,7 +73,7 @@ const display_configuration_t g_disp_conf[] = {
     .dsi_pixel_format = DSI_RGB888,
   },
   { /* 62MHz, 18.518519MHz, 430px, RGB888 */ 
-    .dsi_lane_byte_freq_hz = 62000000ULL,
+    .dsi_lane_byte_freq_hz = 62000000UL,
     .pll_dsi_ndiv = 62,
     .pll_dsi_odf = 2,
     .dsi_dphy_frange = DSI_DPHY_FRANGE_450MHZ_510MHZ,
@@ -84,7 +84,7 @@ const display_configuration_t g_disp_conf[] = {
     .phy_timer_data_hs2lp = 12,
     .phy_timer_data_lp2hs = 23,
 
-    .ltdc_pixel_clock_hz = 18518519ULL,
+    .ltdc_pixel_clock_hz = 18518519UL,
     .pll3_n = 125,
     .pll3_r = 27,
 
@@ -103,7 +103,7 @@ const display_configuration_t g_disp_conf[] = {
     .dsi_pixel_format = DSI_RGB888,
   },
   { /* 62MHz, 18.518519MHz, 480px, RGB565 */ 
-    .dsi_lane_byte_freq_hz = 62000000ULL,
+    .dsi_lane_byte_freq_hz = 62000000UL,
     .pll_dsi_ndiv = 62,
     .pll_dsi_odf = 2,
     .dsi_dphy_frange = DSI_DPHY_FRANGE_450MHZ_510MHZ,
@@ -114,7 +114,7 @@ const display_configuration_t g_disp_conf[] = {
     .phy_timer_data_hs2lp = 12,
     .phy_timer_data_lp2hs = 23,
 
-    .ltdc_pixel_clock_hz = 18518519ULL,
+    .ltdc_pixel_clock_hz = 18518519UL,
     .pll3_n = 125,
     .pll3_r = 27,
 
@@ -133,7 +133,7 @@ const display_configuration_t g_disp_conf[] = {
     .dsi_pixel_format = DSI_RGB565,
   },
   { /* 62MHz, 15.5MHz, 430px, RGB888 */ 
-    .dsi_lane_byte_freq_hz = 62000000ULL,
+    .dsi_lane_byte_freq_hz = 62000000UL,
     .pll_dsi_ndiv = 62,
     .pll_dsi_odf = 2,
     .dsi_dphy_frange = DSI_DPHY_FRANGE_450MHZ_510MHZ,
@@ -144,7 +144,7 @@ const display_configuration_t g_disp_conf[] = {
     .phy_timer_data_hs2lp = 12,
     .phy_timer_data_lp2hs = 23,
 
-    .ltdc_pixel_clock_hz = 15500000ULL,
+    .ltdc_pixel_clock_hz = 15500000UL,
     .pll3_n = 124,
     .pll3_r = 32,
 
@@ -163,7 +163,7 @@ const display_configuration_t g_disp_conf[] = {
     .dsi_pixel_format = DSI_RGB888,
   },
   { /* 62MHz, 15.5MHz, 430px, RGB565 */ 
-    .dsi_lane_byte_freq_hz = 62000000ULL,
+    .dsi_lane_byte_freq_hz = 62000000UL,
     .pll_dsi_ndiv = 62,
     .pll_dsi_odf = 2,
     .dsi_dphy_frange = DSI_DPHY_FRANGE_450MHZ_510MHZ,
@@ -174,7 +174,7 @@ const display_configuration_t g_disp_conf[] = {
     .phy_timer_data_hs2lp = 12,
     .phy_timer_data_lp2hs = 23,
 
-    .ltdc_pixel_clock_hz = 15500000ULL,
+    .ltdc_pixel_clock_hz = 15500000UL,
     .pll3_n = 124,
     .pll3_r = 32,
 
@@ -193,7 +193,7 @@ const display_configuration_t g_disp_conf[] = {
     .dsi_pixel_format = DSI_RGB565,
   },
   { /* 16MHz, 15.5MHz, 430px, RGB565 */ 
-    .dsi_lane_byte_freq_hz = 16000000ULL,
+    .dsi_lane_byte_freq_hz = 16000000UL,
     .pll_dsi_ndiv = 48,
     .pll_dsi_odf = 6,
     .dsi_dphy_frange = DSI_DPHY_FRANGE_120MHZ_160MHZ,
@@ -204,7 +204,7 @@ const display_configuration_t g_disp_conf[] = {
     .phy_timer_data_hs2lp = 6,
     .phy_timer_data_lp2hs = 11,
 
-    .ltdc_pixel_clock_hz = 15500000ULL,
+    .ltdc_pixel_clock_hz = 15500000UL,
     .pll3_n = 124,
     .pll3_r = 32,
 
@@ -223,7 +223,7 @@ const display_configuration_t g_disp_conf[] = {
     .dsi_pixel_format = DSI_RGB565,
   },
   { /* 28.5MHz, 18.518519MHz, 480px, RGB888 */ 
-    .dsi_lane_byte_freq_hz = 28500000ULL,
+    .dsi_lane_byte_freq_hz = 28500000UL,
     .pll_dsi_ndiv = 57,
     .pll_dsi_odf = 4,
     .dsi_dphy_frange = DSI_DPHY_FRANGE_200MHZ_240MHZ,
@@ -234,7 +234,7 @@ const display_configuration_t g_disp_conf[] = {
     .phy_timer_data_hs2lp = 8,
     .phy_timer_data_lp2hs = 15,
 
-    .ltdc_pixel_clock_hz = 18518519ULL,
+    .ltdc_pixel_clock_hz = 18518519UL,
     .pll3_n = 125,
     .pll3_r = 27,
 
@@ -253,7 +253,7 @@ const display_configuration_t g_disp_conf[] = {
     .dsi_pixel_format = DSI_RGB888,
   },
   { /* 56MHz, 18.666667MHz, 480px, RGB888 - DEFAULT/CURRENT config */ 
-    .dsi_lane_byte_freq_hz = 56000000ULL,
+    .dsi_lane_byte_freq_hz = 56000000UL,
     .pll_dsi_ndiv = 56,
     .pll_dsi_odf = 2,
     .dsi_dphy_frange = DSI_DPHY_FRANGE_450MHZ_510MHZ,
@@ -264,7 +264,7 @@ const display_configuration_t g_disp_conf[] = {
     .phy_timer_data_hs2lp = 12,
     .phy_timer_data_lp2hs = 23,
 
-    .ltdc_pixel_clock_hz = 18666667ULL,
+    .ltdc_pixel_clock_hz = 18666667UL,
     .pll3_n = 112,
     .pll3_r = 24,
 
@@ -283,7 +283,7 @@ const display_configuration_t g_disp_conf[] = {
     .dsi_pixel_format = DSI_RGB888,
   },
   { /* 62MHz, 18.518519MHz, 430px, RGB565 */ 
-    .dsi_lane_byte_freq_hz = 62000000ULL,
+    .dsi_lane_byte_freq_hz = 62000000UL,
     .pll_dsi_ndiv = 62,
     .pll_dsi_odf = 2,
     .dsi_dphy_frange = DSI_DPHY_FRANGE_450MHZ_510MHZ,
@@ -294,7 +294,7 @@ const display_configuration_t g_disp_conf[] = {
     .phy_timer_data_hs2lp = 12,
     .phy_timer_data_lp2hs = 23,
 
-    .ltdc_pixel_clock_hz = 18518519ULL,
+    .ltdc_pixel_clock_hz = 18518519UL,
     .pll3_n = 125,
     .pll3_r = 27,
 
@@ -314,7 +314,7 @@ const display_configuration_t g_disp_conf[] = {
   },
 };
 
-const uint8_t conf_idx = 8;
+const uint8_t conf_idx = 0;
 //uint32_t busy_wait_max = 0;
 uint32_t busy_wait_cycles_max = 0;
 
@@ -452,9 +452,9 @@ static bool display_dsi_init(display_driver_t *drv) {
                                          // width
   drv->DSIVidCfg.NumberOfChunks = 0; // No chunks in burst mode
   drv->DSIVidCfg.NullPacketSize = 0; // No null packet in burst mode
-  drv->DSIVidCfg.HorizontalSyncActive = HSYNC * g_disp_conf[conf_idx].dsi_byte_clk_to_pixel_clk_ratio;
-  drv->DSIVidCfg.HorizontalBackPorch = HBP * g_disp_conf[conf_idx].dsi_byte_clk_to_pixel_clk_ratio;
-  drv->DSIVidCfg.HorizontalLine = (g_disp_conf[conf_idx].hact + HSYNC + HBP + g_disp_conf[conf_idx].hfp) * g_disp_conf[conf_idx].dsi_byte_clk_to_pixel_clk_ratio;
+  drv->DSIVidCfg.HorizontalSyncActive = HSYNC * g_disp_conf[conf_idx].dsi_byte_clk_to_pixel_clk_ratio; //TODO: rounding? e.g. add 0.5f?
+  drv->DSIVidCfg.HorizontalBackPorch = HBP * g_disp_conf[conf_idx].dsi_byte_clk_to_pixel_clk_ratio; //TODO: rounding? e.g. add 0.5f?
+  drv->DSIVidCfg.HorizontalLine = (g_disp_conf[conf_idx].hact + HSYNC + HBP + g_disp_conf[conf_idx].hfp) * g_disp_conf[conf_idx].dsi_byte_clk_to_pixel_clk_ratio; //TODO: rounding? e.g. add 0.5f?
   drv->DSIVidCfg.VerticalSyncActive = VSYNC;
   drv->DSIVidCfg.VerticalBackPorch = VBP;
   drv->DSIVidCfg.VerticalFrontPorch = g_disp_conf[conf_idx].vfp[5]; // Default to 60Hz
@@ -821,22 +821,30 @@ static inline uint32_t refresh_rate_vfp(display_refresh_rate_t refresh_rate) {
     return g_disp_conf[conf_idx].vfp[DISPLAY_REFRESH_RATE_60HZ];
   }
 #else
-  display_configuration_t *cfg = &g_disp_conf[conf_idx];
-  uint32_t vfp;
+  const display_configuration_t *cfg = &g_disp_conf[conf_idx];
+  const uint32_t f_lut[DISPLAY_REFRESH_RATE_COUNT] = {
+    [DISPLAY_REFRESH_RATE_10HZ] = 10,
+    [DISPLAY_REFRESH_RATE_20HZ] = 20,
+    [DISPLAY_REFRESH_RATE_30HZ] = 30,
+    [DISPLAY_REFRESH_RATE_40HZ] = 40,
+    [DISPLAY_REFRESH_RATE_50HZ] = 50,
+    [DISPLAY_REFRESH_RATE_60HZ] = 60,
+  };
+  float vfp;
   
   //htotal = hsa+hbp+ha+hfp
   //vtotal = vsa+vbp+va+vfp
   //pixel_cnt = htotal*vtotal = (hsa+hbp+ha+hfp) * (vsa+vbp+va+vfp)
-  //refresh_rate = pixel_cnt / (pixel_clock_hz) = ((hsa+hbp+ha+hfp) * (vsa+vbp+va+vfp)) / pixel_clock_hz
-  //refresh_rate * pixel_clock_hz = (hsa+hbp+ha+hfp) * (vsa+vbp+va+vfp)
-  //((refresh_rate * pixel_clock_hz) / (hsa+hbp+ha+hfp)) - vsa - vbp - va = vfp
+  //refresh_rate = pixel_clock_hz / pixel_cnt = pixel_clock_hz / ((hsa+hbp+ha+hfp) * (vsa+vbp+va+vfp))
+  //pixel_cnt = pixel_clock_hz / refresh_rate
+  //(hsa+hbp+ha+hfp) * (vsa+vbp+va+vfp) = pixel_clock_hz / refresh_rate
+  //(vsa+vbp+va+vfp) = (pixel_clock_hz / refresh_rate) / (hsa+hbp+ha+hfp)
+  //vfp = ((pixel_clock_hz / refresh_rate) / (hsa+hbp+ha+hfp)) - vsa - vbp - va
+  vfp = ((float)cfg->ltdc_pixel_clock_hz) / ((float)f_lut[refresh_rate]);
+  vfp /= (float)(HSYNC + HBP + cfg->hact + cfg->hfp);
+  vfp -= (VSYNC + VBP + VACT);
 
-  //vfp = ((refresh_rate * cfg->ltdc_pixel_clock_hz) / (cfg->hact + HSYNC + HBP + cfg->hfp)) - (VSYNC - VBP - VACT);
-  vfp = refresh_rate * cfg->ltdc_pixel_clock_hz;
-  vfp /= cfg->hact + HSYNC + HBP + cfg->hfp;
-  vfp -= VSYNC - VBP - VACT;
-
-  return vfp;
+  return (uint32_t)vfp; 
 #endif
 }
 

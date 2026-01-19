@@ -47,7 +47,7 @@
 #endif
 
 typedef struct {
-  uint64_t dsi_lane_byte_freq_hz;
+  uint32_t dsi_lane_byte_freq_hz;
   uint32_t pll_dsi_ndiv;
   uint32_t pll_dsi_odf;
   uint32_t dsi_dphy_frange;
@@ -58,7 +58,7 @@ typedef struct {
   uint32_t phy_timer_data_hs2lp;
   uint32_t phy_timer_data_lp2hs;
 
-  uint64_t ltdc_pixel_clock_hz;
+  uint32_t ltdc_pixel_clock_hz;
   uint32_t pll3_n;
   uint32_t pll3_r;
 
