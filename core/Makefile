@@ -46,7 +46,7 @@ TREZOR_EMULATOR_DEBUGGABLE ?= 0
 QUIET_MODE ?= 0
 TREZOR_DISABLE_ANIMATION ?= $(if $(filter 0,$(PYOPT)),1,0)
 STORAGE_INSECURE_TESTING_MODE ?= 0
-UI_PERFORMANCE_OVERLAY ?= 0
+UI_PERFORMANCE_OVERLAY ?= 1
 DBG_CONSOLE ?= SWO
 
 # If set, VCP writes will be blocking, in order to allow reliable debug data transmission over VCP.

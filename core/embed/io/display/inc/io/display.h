@@ -54,24 +54,6 @@ typedef enum {
 
 #ifdef KERNEL_MODE
 
-#define REFRESH_RATE_POLLING 1
-
-typedef enum {
-  DISPLAY_REFRESH_RATE_10HZ = 0, // not used
-  DISPLAY_REFRESH_RATE_20HZ = 1, // not used  
-  DISPLAY_REFRESH_RATE_30HZ = 2,
-  DISPLAY_REFRESH_RATE_40HZ = 3, // not used
-  DISPLAY_REFRESH_RATE_50HZ = 4, // not used
-  DISPLAY_REFRESH_RATE_60HZ = 5,
-  DISPLAY_REFRESH_RATE_COUNT // Number of refresh rate options
-} display_refresh_rate_t;
-
-typedef enum {
-  DISPLAY_REFRESH_RATE_IDLE,
-  DISPLAY_REFRESH_RATE_REQUESTED,
-  DISPLAY_REFRESH_RATE_UPDATING
-} display_refresh_rate_state_t;
-
 // Initializes the display controller.
 //
 // If `mode` is `DISPLAY_RETAIN_CONTENT`, ensure the driver was previously
@@ -91,12 +73,6 @@ void display_deinit(display_content_mode_t mode);
 // Allows unprivileged access to the display framebuffer from
 // perspective of the GTZC (Global TrustZone Controller).
 void display_set_unpriv_access(bool unpriv);
-
-void display_refresh_rate_set(display_refresh_rate_t refresh_rate);
-
-#if !REFRESH_RATE_POLLING
-void display_refresh_rate_config(void);
-#endif
 
 #endif  // KERNEL_MODE
 

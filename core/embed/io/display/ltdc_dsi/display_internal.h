@@ -46,6 +46,24 @@
 #define PHYSICAL_FRAME_BUFFER_ALIGNMENT 32
 #endif
 
+#define REFRESH_RATE_POLLING 1
+
+typedef enum {
+  DISPLAY_REFRESH_RATE_10HZ = 0, // not used
+  DISPLAY_REFRESH_RATE_20HZ = 1, // not used  
+  DISPLAY_REFRESH_RATE_30HZ = 2,
+  DISPLAY_REFRESH_RATE_40HZ = 3, // not used
+  DISPLAY_REFRESH_RATE_50HZ = 4, // not used
+  DISPLAY_REFRESH_RATE_60HZ = 5,
+  DISPLAY_REFRESH_RATE_COUNT // Number of refresh rate options
+} display_refresh_rate_t;
+
+typedef enum {
+  DISPLAY_REFRESH_RATE_IDLE,
+  DISPLAY_REFRESH_RATE_REQUESTED,
+  DISPLAY_REFRESH_RATE_UPDATING
+} display_refresh_rate_state_t;
+
 typedef struct {
   uint32_t dsi_lane_byte_freq_hz;
   uint32_t pll_dsi_ndiv;
@@ -122,6 +140,12 @@ const uint32_t *panel_lut_get(void);
 
 bool display_gfxmmu_init(display_driver_t *drv);
 void display_gfxmmu_deinit(display_driver_t *drv);
+#endif
+
+void display_refresh_rate_set(display_refresh_rate_t refresh_rate);
+
+#if !REFRESH_RATE_POLLING
+void display_refresh_rate_config(void);
 #endif
 
 #endif  // TREZOR_HAL_DISPLAY_INTERNAL_H
