@@ -207,6 +207,9 @@ void HAL_LTDC_LineEvenCallback(LTDC_HandleTypeDef *hltdc) {
     return;
   }
 
+#if 0  
+  display_refresh_rate_sm_main();
+
   refresh_counter++;
 
   if (drv->update_pending > 0) {
@@ -221,9 +224,59 @@ void HAL_LTDC_LineEvenCallback(LTDC_HandleTypeDef *hltdc) {
     drv->update_pending = 3;
   }
 
-  HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, LCD_HEIGHT);
 
-  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+
+  if (drv->refresh_rate_state == DISPLAY_REFRESH_RATE_REQUESTED) {
+    //Configure the line event for the proper time to perform VFP update.
+    HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.TotalHeigh);
+
+    //The line event has been configured. Moving to the UPDATING state.
+    drv->refresh_rate_state = DISPLAY_REFRESH_RATE_UPDATING;
+  } else {
+    //Configure the next line event for standard operation.
+    HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.AccumulatedActiveH);
+  }
+
+  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);  
+#else
+  //TODO: idea is to implement a DISPLAY_REFRESH_RATE state machine main
+  //function which would handle the state transitions.
+  if (drv->refresh_rate_state == DISPLAY_REFRESH_RATE_UPDATING) {
+    display_refresh_rate_config();
+
+    //TODO: move the following statement into display_refresh_rate_config?
+    //Configure the next line event for standard operation.
+    HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.AccumulatedActiveH);
+  } else {
+    refresh_counter++;
+
+    if (drv->update_pending > 0) {
+      drv->update_pending--;
+    }
+
+    int16_t fb_idx = fb_queue_take(&drv->ready_frames);
+    if (fb_idx >= 0) {
+      fb_queue_put(&drv->empty_frames, drv->active_frame);
+      drv->active_frame = fb_idx;
+      display_set_fb((uint32_t)get_fb_ptr(drv->active_frame));
+      drv->update_pending = 3;
+    }
+
+    if (drv->refresh_rate_state == DISPLAY_REFRESH_RATE_REQUESTED) {
+      //Configure the line event for the proper time to perform VFP update.
+      HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.TotalHeigh);
+
+      //The line event has been configured. Moving to the UPDATING state.
+      drv->refresh_rate_state = DISPLAY_REFRESH_RATE_UPDATING;
+    } else {
+      //Configure the next line event for standard operation.
+      HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.AccumulatedActiveH);
+    }
+
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+  }
+#endif
+
 }
 
 #endif

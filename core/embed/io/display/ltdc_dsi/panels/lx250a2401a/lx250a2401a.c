@@ -25,6 +25,7 @@
 
 #include "lx250a2401a.h"
 
+#include <io/display.h>
 #include "../../display_internal.h"
 
 #define GFXMMU_LINE_L(line_offset, first_block, last_block) \

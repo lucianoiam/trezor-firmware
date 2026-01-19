@@ -24,6 +24,7 @@
 
 #include <sys/irq.h>
 
+#include <io/display.h>
 #include "display_internal.h"
 
 extern uint8_t physical_frame_buffer_0[PHYSICAL_FRAME_BUFFER_SIZE];

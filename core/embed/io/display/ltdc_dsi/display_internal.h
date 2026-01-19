@@ -47,6 +47,32 @@
 #endif
 
 typedef struct {
+  uint64_t dsi_lane_byte_freq_hz;
+  uint32_t pll_dsi_ndiv;
+  uint32_t pll_dsi_odf;
+  uint32_t dsi_dphy_frange;
+  uint32_t dsi_tx_escape_clk_div;
+
+  uint32_t phy_timer_clk_hs2lp;
+  uint32_t phy_timer_clk_lp2hs;
+  uint32_t phy_timer_data_hs2lp;
+  uint32_t phy_timer_data_lp2hs;
+
+  uint64_t ltdc_pixel_clock_hz;
+  uint32_t pll3_n;
+  uint32_t pll3_r;
+
+  float dsi_byte_clk_to_pixel_clk_ratio;
+
+  uint32_t vfp[DISPLAY_REFRESH_RATE_COUNT];
+  uint32_t hfp;
+  uint32_t hact;
+  uint32_t lcd_width;
+
+  uint32_t dsi_pixel_format;
+} display_configuration_t;
+
+typedef struct {
   bool initialized;
   uint16_t update_pending;
 
@@ -60,6 +86,9 @@ typedef struct {
   // Current backlight level ranging from 0 to 255
   uint8_t backlight_level;
   // The current frame buffer selector
+
+  volatile display_refresh_rate_state_t refresh_rate_state;
+  volatile uint32_t refresh_rate_vfp;
 
   DSI_HandleTypeDef hlcd_dsi;
   LTDC_HandleTypeDef hlcd_ltdc;

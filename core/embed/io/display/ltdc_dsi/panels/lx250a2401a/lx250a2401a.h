@@ -21,32 +21,6 @@
 
 #include <trezor_types.h>
 
-typedef struct {
-  uint64_t dsi_lane_byte_freq_hz;
-  uint32_t pll_dsi_ndiv;
-  uint32_t pll_dsi_odf;
-  uint32_t dsi_dphy_frange;
-  uint32_t dsi_tx_escape_clk_div;
-
-  uint32_t phy_timer_clk_hs2lp;
-  uint32_t phy_timer_clk_lp2hs;
-  uint32_t phy_timer_data_hs2lp;
-  uint32_t phy_timer_data_lp2hs;
-
-  uint64_t ltdc_pixel_clock_hz;
-  uint32_t pll3_n;
-  uint32_t pll3_r;
-
-  float dsi_byte_clk_to_pixel_clk_ratio;
-
-  uint32_t vfp[6];
-  uint32_t hfp;
-  uint32_t hact;
-  uint32_t lcd_width;
-
-  uint32_t dsi_pixel_format;
-} display_configuration_t;
-
 #define VSYNC 2
 #define VBP 26
 #define VACT 520

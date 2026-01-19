@@ -107,11 +107,10 @@
 #include <io/usb_config.h>
 #endif
 
-#include "../../io/display/ltdc_dsi/panels/lx250a2401a/lx250a2401a.h"
+#include "../../io/display/ltdc_dsi/display_internal.h"
 
 extern volatile uint32_t refresh_counter;
-extern const display_configuration_t g_disp_conf[];
-extern const uint8_t conf_idx;
+extern uint32_t busy_wait_cycles_max;
 
 void drivers_init() {
 #ifdef SECURE_MODE
@@ -226,20 +225,22 @@ static void kernel_loop(applet_t *coreapp) {
     }
 
     if (ticks() >= time) {
-      static int idx = 0;
       float frequency;
 
       irq_key_t key = irq_lock();
-      frequency = refresh_counter / 30.0f;
+      frequency = refresh_counter / 1.0f;
       refresh_counter = 0;
       irq_unlock(key);
 
-      dbg_printf("VFP=%d, frequency=%d.%d\n", (int)g_disp_conf[conf_idx].vfp[idx], (int)frequency, (int)((frequency-(int)frequency)*100));
+      static display_refresh_rate_t refresh_rate = DISPLAY_REFRESH_RATE_60HZ;
 
-      idx = idx > 0 ? idx - 1 : 5;
-      display_refresh_rate_set(g_disp_conf[conf_idx].vfp[idx]);
+      dbg_printf("frequency=%d.%d, busy_wait_cycles_max=%d \n", (int)frequency, (int)((frequency-(int)frequency)*100), (int)busy_wait_cycles_max);
 
-      time = ticks_timeout(30000);      
+      refresh_rate = refresh_rate == DISPLAY_REFRESH_RATE_30HZ ? DISPLAY_REFRESH_RATE_60HZ : DISPLAY_REFRESH_RATE_30HZ;
+
+      display_refresh_rate_set(refresh_rate);
+
+      time = ticks_timeout(1000);      
     }
 
   } while (applet_is_alive(coreapp));
