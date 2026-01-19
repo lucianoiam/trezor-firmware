@@ -82,7 +82,7 @@ typedef enum {
 } storage_pin_op_t;
 
 typedef enum {
-  UNLOCK_OK = -1431655766,  // sectrue
+  UNLOCK_OK = 0,
   UNLOCK_NOT_INITIALIZED = 1,
   UNLOCK_NO_PIN,
   UNLOCK_PIN_GET_FAILS_FAILED,
@@ -100,7 +100,7 @@ typedef enum {
 } storage_unlock_result_t;
 
 typedef enum {
-  PIN_CHANGE_OK = -1431655766,  // sectrue
+  PIN_CHANGE_OK = 0,
   PIN_CHANGE_WIPE_CODE = 1,
   PIN_CHANGE_STORAGE_LOCKED,
   PIN_CHANGE_WRONG_ARGUMENT,

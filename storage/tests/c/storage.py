@@ -11,6 +11,8 @@ import consts
 
 EXTERNAL_SALT_LEN = 32
 sectrue = -1431655766  # 0xAAAAAAAAA
+UNLOCK_OK = 0
+CHANGE_PIN = 0
 
 
 class Storage:
@@ -32,7 +34,7 @@ class Storage:
     def unlock(self, pin: str, ext_salt: bytes = None) -> bool:
         if ext_salt is not None and len(ext_salt) != EXTERNAL_SALT_LEN:
             raise ValueError
-        return sectrue == self.lib.storage_unlock(pin.encode(), len(pin), ext_salt)
+        return UNLOCK_OK == self.lib.storage_unlock(pin.encode(), len(pin), ext_salt)
 
     def lock(self) -> None:
         self.lib.storage_lock()
@@ -50,7 +52,7 @@ class Storage:
     ) -> bool:
         if new_ext_salt is not None and len(new_ext_salt) != EXTERNAL_SALT_LEN:
             raise ValueError
-        return sectrue == self.lib.storage_change_pin(
+        return CHANGE_PIN == self.lib.storage_change_pin(
             newpin.encode(),
             len(newpin),
             new_ext_salt,
