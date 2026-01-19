@@ -471,13 +471,18 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_wipe_obj,
 ///     PROCESSING_MSG = 2
 ///     STARTING_MSG = 3
 ///     WRONG_PIN_MSG = 4
+///     PIN_SETUP_MSG = 5
+///     PIN_CHANGE_MSG = 6
+///     PIN_REMOVE_MSG = 7
 STATIC const qstr mod_trezorconfig_StorageMessage_fields[] = {
-    MP_QSTR_NO_MSG, MP_QSTR_VERIFYING_PIN_MSG, MP_QSTR_PROCESSING_MSG,
-    MP_QSTR_STARTING_MSG, MP_QSTR_WRONG_PIN_MSG};
+    MP_QSTR_NO_MSG,         MP_QSTR_VERIFYING_PIN_MSG, MP_QSTR_PROCESSING_MSG,
+    MP_QSTR_STARTING_MSG,   MP_QSTR_WRONG_PIN_MSG,     MP_QSTR_PIN_SETUP_MSG,
+    MP_QSTR_PIN_CHANGE_MSG, MP_QSTR_PIN_REMOVE_MSG};
 STATIC MP_DEFINE_ATTRTUPLE(
     mod_trezorconfig_StorageMessage_obj, mod_trezorconfig_StorageMessage_fields,
     (sizeof(mod_trezorconfig_StorageMessage_fields) / sizeof(qstr)),
-    MP_ROM_INT(0), MP_ROM_INT(1), MP_ROM_INT(2), MP_ROM_INT(3), MP_ROM_INT(4));
+    MP_ROM_INT(0), MP_ROM_INT(1), MP_ROM_INT(2), MP_ROM_INT(3), MP_ROM_INT(4),
+    MP_ROM_INT(5), MP_ROM_INT(6), MP_ROM_INT(7));
 
 STATIC const mp_rom_map_elem_t mp_module_trezorconfig_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_trezorconfig)},

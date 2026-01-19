@@ -153,3 +153,6 @@ class StorageMessage(IntEnum):
     PROCESSING_MSG = 2
     STARTING_MSG = 3
     WRONG_PIN_MSG = 4
+    PIN_SETUP_MSG = 5
+    PIN_CHANGE_MSG = 6
+    PIN_REMOVE_MSG = 7

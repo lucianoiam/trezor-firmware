@@ -1172,5 +1172,8 @@
   "1170": "secure_sync__delegated_identity_key_no_thp",
   "1171": "secure_sync__delegated_identity_key_thp",
   "1172": "secure_sync__evolu_node_no_optiga",
-  "1173": "secure_sync__header"
+  "1173": "secure_sync__header",
+  "1174": "storage_msg__pin_change",
+  "1175": "storage_msg__pin_remove",
+  "1176": "storage_msg__pin_setup"
 }

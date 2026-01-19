@@ -848,6 +848,9 @@ static void _librust_qstrs(void) {
   MP_QSTR_sn__title;
   MP_QSTR_start_advertising;
   MP_QSTR_start_comm;
+  MP_QSTR_storage_msg__pin_change;
+  MP_QSTR_storage_msg__pin_remove;
+  MP_QSTR_storage_msg__pin_setup;
   MP_QSTR_storage_msg__processing;
   MP_QSTR_storage_msg__starting;
   MP_QSTR_storage_msg__verifying_pin;

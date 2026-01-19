@@ -1721,7 +1721,20 @@ storage_pin_change_result_t storage_change_pin(const uint8_t *newpin,
   mpu_mode_t mpu_mode = mpu_reconfig(MPU_MODE_STORAGE);
 
   ui_progress_init(STORAGE_PIN_OP_SET);
-  ui_message = PROCESSING_MSG;
+
+  if (sectrue == storage_has_pin()) {
+    if (newpin_len == 0 ) {
+      ui_message = PIN_REMOVE_MSG;
+    } else {
+      ui_message = PIN_CHANGE_MSG;
+    }
+  } else {
+    if (newpin_len == 0 ) {
+      ui_message = PROCESSING_MSG;
+    } else {
+      ui_message = PIN_SETUP_MSG;
+    }
+  }
 
   if (sectrue != storage_is_unlocked()) {
     ret = PIN_CHANGE_STORAGE_LOCKED;

@@ -1559,6 +1559,9 @@ pub enum TranslatedString {
     secure_sync__delegated_identity_key_no_thp = 1170,  // "Allow Trezor Suite to use Suite Sync with this Trezor?"
     secure_sync__delegated_identity_key_thp = 1171,  // "Allow {0} on {1} to use Suite Sync with this Trezor?"
     secure_sync__header = 1173,  // "Suite Sync"
+    storage_msg__pin_change = 1174,  // {"Bolt": "Changing PIN", "Caesar": "Changing PIN", "Delizia": "Changing PIN", "Eckhart": "Changing PIN..."}
+    storage_msg__pin_remove = 1175,  // {"Bolt": "Removing PIN", "Caesar": "Removing PIN", "Delizia": "Removing PIN", "Eckhart": "Removing PIN..."}
+    storage_msg__pin_setup = 1176,  // {"Bolt": "Setting PIN", "Caesar": "Setting PIN", "Delizia": "Setting PIN", "Eckhart": "Setting PIN..."}
 }
 
 impl TranslatedString {
@@ -5075,6 +5078,30 @@ impl TranslatedString {
             (Self::secure_sync__delegated_identity_key_no_thp, "Allow Trezor Suite to use Suite Sync with this Trezor?"),
             (Self::secure_sync__delegated_identity_key_thp, "Allow {0} on {1} to use Suite Sync with this Trezor?"),
             (Self::secure_sync__header, "Suite Sync"),
+            #[cfg(feature = "layout_bolt")]
+            (Self::storage_msg__pin_change, "Changing PIN"),
+            #[cfg(feature = "layout_caesar")]
+            (Self::storage_msg__pin_change, "Changing PIN"),
+            #[cfg(feature = "layout_delizia")]
+            (Self::storage_msg__pin_change, "Changing PIN"),
+            #[cfg(feature = "layout_eckhart")]
+            (Self::storage_msg__pin_change, "Changing PIN..."),
+            #[cfg(feature = "layout_bolt")]
+            (Self::storage_msg__pin_remove, "Removing PIN"),
+            #[cfg(feature = "layout_caesar")]
+            (Self::storage_msg__pin_remove, "Removing PIN"),
+            #[cfg(feature = "layout_delizia")]
+            (Self::storage_msg__pin_remove, "Removing PIN"),
+            #[cfg(feature = "layout_eckhart")]
+            (Self::storage_msg__pin_remove, "Removing PIN..."),
+            #[cfg(feature = "layout_bolt")]
+            (Self::storage_msg__pin_setup, "Setting PIN"),
+            #[cfg(feature = "layout_caesar")]
+            (Self::storage_msg__pin_setup, "Setting PIN"),
+            #[cfg(feature = "layout_delizia")]
+            (Self::storage_msg__pin_setup, "Setting PIN"),
+            #[cfg(feature = "layout_eckhart")]
+            (Self::storage_msg__pin_setup, "Setting PIN..."),
     ];
 
     #[cfg(feature = "micropython")]
@@ -6424,6 +6451,9 @@ impl TranslatedString {
         (Qstr::MP_QSTR_stellar__value_sha256, Self::stellar__value_sha256),
         #[cfg(feature = "universal_fw")]
         (Qstr::MP_QSTR_stellar__wanna_clean_value_key_template, Self::stellar__wanna_clean_value_key_template),
+        (Qstr::MP_QSTR_storage_msg__pin_change, Self::storage_msg__pin_change),
+        (Qstr::MP_QSTR_storage_msg__pin_remove, Self::storage_msg__pin_remove),
+        (Qstr::MP_QSTR_storage_msg__pin_setup, Self::storage_msg__pin_setup),
         (Qstr::MP_QSTR_storage_msg__processing, Self::storage_msg__processing),
         (Qstr::MP_QSTR_storage_msg__starting, Self::storage_msg__starting),
         (Qstr::MP_QSTR_storage_msg__verifying_pin, Self::storage_msg__verifying_pin),

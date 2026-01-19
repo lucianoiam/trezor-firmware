@@ -2012,6 +2012,24 @@
     "stellar__valid_to": "Valid to (UTC)",
     "stellar__value_sha256": "Value (SHA-256):",
     "stellar__wanna_clean_value_key_template": "Do you want to clear value key {0}?",
+    "storage_msg__pin_change": {
+      "Bolt": "Changing PIN",
+      "Caesar": "Changing PIN",
+      "Delizia": "Changing PIN",
+      "Eckhart": "Changing PIN..."
+    },
+    "storage_msg__pin_remove": {
+      "Bolt": "Removing PIN",
+      "Caesar": "Removing PIN",
+      "Delizia": "Removing PIN",
+      "Eckhart": "Removing PIN..."
+    },
+    "storage_msg__pin_setup": {
+      "Bolt": "Setting PIN",
+      "Caesar": "Setting PIN",
+      "Delizia": "Setting PIN",
+      "Eckhart": "Setting PIN..."
+    },
     "storage_msg__processing": {
       "Bolt": "Processing",
       "Caesar": "Processing",

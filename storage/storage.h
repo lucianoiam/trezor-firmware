@@ -74,6 +74,9 @@ enum storage_ui_message_t {
   PROCESSING_MSG,
   STARTING_MSG,
   WRONG_PIN_MSG,
+  PIN_SETUP_MSG,
+  PIN_CHANGE_MSG,
+  PIN_REMOVE_MSG,
 };
 
 typedef enum {

@@ -18,6 +18,12 @@ def _storage_message_to_str(message: config.StorageMessage | None) -> str | None
         return TR.storage_msg__starting
     if message == config.StorageMessage.WRONG_PIN_MSG:
         return TR.storage_msg__wrong_pin
+    if message == config.StorageMessage.PIN_SETUP_MSG:
+        return TR.storage_msg__pin_setup
+    if message == config.StorageMessage.PIN_CHANGE_MSG:
+        return TR.storage_msg__pin_change
+    if message == config.StorageMessage.PIN_REMOVE_MSG:
+        return TR.storage_msg__pin_remove
     raise RuntimeError  # unknown message
 
 
