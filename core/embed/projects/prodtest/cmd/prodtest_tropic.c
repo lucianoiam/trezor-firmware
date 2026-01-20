@@ -684,25 +684,21 @@ static bool tropic_is_paired(cli_t* cli) {
   // Try to establish a session using the unprivileged key pair.
   ret = tropic_custom_session_start(cli, TROPIC_UNPRIVILEGED_PAIRING_KEY_SLOT);
   if (ret != LT_OK) {
-    if (cli != NULL) {
-      cli_error(
-          cli, CLI_ERROR,
-          "`tropic_custom_session_start()` for unprivileged key failed with "
-          "error '%s'",
-          lt_ret_verbose(ret));
-    }
+    cli_trace(
+        cli,
+        "`tropic_custom_session_start()` for unprivileged key failed with "
+        "error '%s'",
+        lt_ret_verbose(ret));
     goto cleanup;
   }
 
   // Try to establish a session using the privileged key pair.
   ret = tropic_custom_session_start(cli, TROPIC_PRIVILEGED_PAIRING_KEY_SLOT);
   if (ret != LT_OK) {
-    if (cli != NULL) {
-      cli_error(cli, CLI_ERROR,
-                "`tropic_custom_session_start()` for privileged key failed "
-                "with error '%s'",
-                lt_ret_verbose(ret));
-    }
+    cli_trace(cli,
+              "`tropic_custom_session_start()` for privileged key failed "
+              "with error '%s'",
+              lt_ret_verbose(ret));
     goto cleanup;
   }
 
@@ -866,9 +862,12 @@ static void prodtest_tropic_pair(cli_t* cli) {
     }
   }
 
-  if (tropic_is_paired(cli)) {
-    cli_ok(cli, "");
+  if (!tropic_is_paired(cli)) {
+    cli_error(cli, CLI_ERROR, "`tropic_is_paired()` failed.");
+    goto cleanup;
   }
+
+  cli_ok(cli, "");
 
 cleanup:
   memzero(privileged_private, sizeof(privileged_private));
@@ -986,7 +985,7 @@ static void prodtest_tropic_handshake(cli_t* cli) {
     return;
   }
 
-  if (!tropic_is_paired(NULL)) {
+  if (!tropic_is_paired(cli)) {
     cli_error(cli, CLI_ERROR, "`tropic-pair` must be called first.");
     return;
   }
@@ -1168,7 +1167,7 @@ static void prodtest_tropic_lock(cli_t* cli) {
     return;
   }
 
-  if (!tropic_is_paired(NULL)) {
+  if (!tropic_is_paired(cli)) {
     cli_error(cli, CLI_ERROR, "`tropic-pair` must be called first.");
     return;
   }
