@@ -110,15 +110,15 @@ STATIC mp_obj_t mod_trezorconfig_unlock(mp_obj_t pin, mp_obj_t ext_salt) {
     case UNLOCK_WRONG_STORAGE_VERSION:
       mp_raise_msg(&mp_type_RuntimeError,
                    MP_ERROR_TEXT("Wrong storage version."));
-    case UNLOCK_OPTIGA_HMAC_RESET_FAILED:
+    case UNLOCK_OPTIGA_GET_HMAC_RESET_KEY_FAILED:
       mp_raise_msg(&mp_type_RuntimeError,
-                   MP_ERROR_TEXT("OPTIGA HMAC reset failed."));
-    case UNLOCK_OPTIGA_COUNTER_RESET_FAILED:
+                   MP_ERROR_TEXT("OPTIGA get HMAC reset failed."));
+    case UNLOCK_OPTIGA_HMAC_COUNTER_RESET_FAILED:
       mp_raise_msg(&mp_type_RuntimeError,
-                   MP_ERROR_TEXT("OPTIGA counter reset failed."));
-    case UNLOCK_TROPIC_RESET_MAC_AND_DESTROY_FAILED:
+                   MP_ERROR_TEXT("OPTIGA HMAC counter reset failed."));
+    case UNLOCK_GET_TROPIC_MAC_AND_DESTROY_RESET_KEY_FAILED:
       mp_raise_msg(&mp_type_RuntimeError,
-                   MP_ERROR_TEXT("Tropic MAC and destroy reset failed."));
+                   MP_ERROR_TEXT("get Tropic MAC and destroy reset key failed."));
     case UNLOCK_TROPIC_RESET_SLOTS_FAILED:
       mp_raise_msg(&mp_type_RuntimeError,
                    MP_ERROR_TEXT("Tropic slots reset failed."));
