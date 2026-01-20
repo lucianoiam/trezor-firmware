@@ -49,12 +49,10 @@
 #define REFRESH_RATE_POLLING 1
 
 typedef enum {
-  DISPLAY_REFRESH_RATE_10HZ = 0, // not used
-  DISPLAY_REFRESH_RATE_20HZ = 1, // not used  
-  DISPLAY_REFRESH_RATE_30HZ = 2,
-  DISPLAY_REFRESH_RATE_40HZ = 3, // not used
-  DISPLAY_REFRESH_RATE_50HZ = 4, // not used
-  DISPLAY_REFRESH_RATE_60HZ = 5,
+  DISPLAY_REFRESH_RATE_30HZ,
+  DISPLAY_REFRESH_RATE_40HZ, // not used
+  DISPLAY_REFRESH_RATE_50HZ, // not used
+  DISPLAY_REFRESH_RATE_60HZ,
   DISPLAY_REFRESH_RATE_COUNT // Number of refresh rate options
 } display_refresh_rate_t;
 
@@ -82,6 +80,7 @@ typedef struct {
 
   float dsi_byte_clk_to_pixel_clk_ratio;
 
+  //vfp = (ltdc_pixel_clock_hz / (refresh_rate * (hsync+hbp+hact+hfp))) - (vsync+vbp+vact)
   uint32_t vfp[DISPLAY_REFRESH_RATE_COUNT];
   uint32_t hfp;
   uint32_t hact;

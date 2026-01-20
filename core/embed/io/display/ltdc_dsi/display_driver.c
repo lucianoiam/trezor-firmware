@@ -60,12 +60,10 @@ const display_configuration_t g_disp_conf[] = {
 
     .dsi_byte_clk_to_pixel_clk_ratio = 62.0f / 18.518519f,
 
-    .vfp = {[DISPLAY_REFRESH_RATE_10HZ] = 2836 /*10Hz*/,
-            [DISPLAY_REFRESH_RATE_20HZ] = 1144 /*20Hz*/,
-            [DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
-            [DISPLAY_REFRESH_RATE_40HZ] = 298 /*40Hz*/,
-            [DISPLAY_REFRESH_RATE_50HZ] = 129 /*50Hz*/,
-            [DISPLAY_REFRESH_RATE_60HZ] = 16 /*60Hz*/},
+    .vfp = {[DISPLAY_REFRESH_RATE_30HZ] = 587 /*30Hz*/,
+            [DISPLAY_REFRESH_RATE_40HZ] = 303 /*40Hz*/,
+            [DISPLAY_REFRESH_RATE_50HZ] = 133 /*50Hz*/,
+            [DISPLAY_REFRESH_RATE_60HZ] = 19 /*60Hz*/},
     .hfp = 56,
     .hact = 480,
     .lcd_width = 480,
@@ -90,12 +88,10 @@ const display_configuration_t g_disp_conf[] = {
 
     .dsi_byte_clk_to_pixel_clk_ratio = 62.0f / 18.518519f,
 
-    .vfp = {[DISPLAY_REFRESH_RATE_10HZ] = 2836 /*10Hz*/,
-            [DISPLAY_REFRESH_RATE_20HZ] = 1144 /*20Hz*/,
-            [DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
-            [DISPLAY_REFRESH_RATE_40HZ] = 298 /*40Hz*/,
-            [DISPLAY_REFRESH_RATE_50HZ] = 129 /*50Hz*/,
-            [DISPLAY_REFRESH_RATE_60HZ] = 16 /*60Hz*/},    
+    .vfp = {[DISPLAY_REFRESH_RATE_30HZ] = 587 /*30Hz*/,
+            [DISPLAY_REFRESH_RATE_40HZ] = 303 /*40Hz*/,
+            [DISPLAY_REFRESH_RATE_50HZ] = 133 /*50Hz*/,
+            [DISPLAY_REFRESH_RATE_60HZ] = 19 /*60Hz*/},    
     .hfp = 106,
     .hact = 430,
     .lcd_width = 430,
@@ -120,12 +116,10 @@ const display_configuration_t g_disp_conf[] = {
 
     .dsi_byte_clk_to_pixel_clk_ratio = 62.0f / 18.518519f,
 
-    .vfp = {[DISPLAY_REFRESH_RATE_10HZ] = 2836 /*10Hz*/,
-            [DISPLAY_REFRESH_RATE_20HZ] = 1144 /*20Hz*/,
-            [DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
-            [DISPLAY_REFRESH_RATE_40HZ] = 298 /*40Hz*/,
-            [DISPLAY_REFRESH_RATE_50HZ] = 129 /*50Hz*/,
-            [DISPLAY_REFRESH_RATE_60HZ] = 16 /*60Hz*/},
+    .vfp = {[DISPLAY_REFRESH_RATE_30HZ] = 587 /*30Hz*/,
+            [DISPLAY_REFRESH_RATE_40HZ] = 303 /*40Hz*/,
+            [DISPLAY_REFRESH_RATE_50HZ] = 133 /*50Hz*/,
+            [DISPLAY_REFRESH_RATE_60HZ] = 19 /*60Hz*/},
     .hfp = 56,
     .hact = 480,
     .lcd_width = 480,
@@ -150,9 +144,7 @@ const display_configuration_t g_disp_conf[] = {
 
     .dsi_byte_clk_to_pixel_clk_ratio = 62.0f / 15.5f,
 
-    .vfp = {[DISPLAY_REFRESH_RATE_10HZ] = 2836 /*10Hz*/,
-            [DISPLAY_REFRESH_RATE_20HZ] = 1144 /*20Hz*/,
-            [DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
+    .vfp = {[DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
             [DISPLAY_REFRESH_RATE_40HZ] = 298 /*40Hz*/,
             [DISPLAY_REFRESH_RATE_50HZ] = 129 /*50Hz*/,
             [DISPLAY_REFRESH_RATE_60HZ] = 16 /*60Hz*/},
@@ -180,9 +172,7 @@ const display_configuration_t g_disp_conf[] = {
 
     .dsi_byte_clk_to_pixel_clk_ratio = 62.0f / 15.5f,
 
-    .vfp = {[DISPLAY_REFRESH_RATE_10HZ] = 2836 /*10Hz*/,
-            [DISPLAY_REFRESH_RATE_20HZ] = 1144 /*20Hz*/,
-            [DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
+    .vfp = {[DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
             [DISPLAY_REFRESH_RATE_40HZ] = 298 /*40Hz*/,
             [DISPLAY_REFRESH_RATE_50HZ] = 129 /*50Hz*/,
             [DISPLAY_REFRESH_RATE_60HZ] = 16 /*60Hz*/},
@@ -210,9 +200,7 @@ const display_configuration_t g_disp_conf[] = {
 
     .dsi_byte_clk_to_pixel_clk_ratio = 16.0f / 15.5f,
 
-    .vfp = {[DISPLAY_REFRESH_RATE_10HZ] = 2836 /*10Hz*/,
-            [DISPLAY_REFRESH_RATE_20HZ] = 1144 /*20Hz*/,
-            [DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
+    .vfp = {[DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
             [DISPLAY_REFRESH_RATE_40HZ] = 298 /*40Hz*/,
             [DISPLAY_REFRESH_RATE_50HZ] = 129 /*50Hz*/,
             [DISPLAY_REFRESH_RATE_60HZ] = 16 /*60Hz*/},
@@ -240,12 +228,10 @@ const display_configuration_t g_disp_conf[] = {
 
     .dsi_byte_clk_to_pixel_clk_ratio = 28.5f / 18.518519f,
 
-    .vfp = {[DISPLAY_REFRESH_RATE_10HZ] = 2836 /*10Hz*/,
-            [DISPLAY_REFRESH_RATE_20HZ] = 1144 /*20Hz*/,
-            [DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
-            [DISPLAY_REFRESH_RATE_40HZ] = 298 /*40Hz*/,
-            [DISPLAY_REFRESH_RATE_50HZ] = 129 /*50Hz*/,
-            [DISPLAY_REFRESH_RATE_60HZ] = 16 /*60Hz*/},
+    .vfp = {[DISPLAY_REFRESH_RATE_30HZ] = 587 /*30Hz*/,
+            [DISPLAY_REFRESH_RATE_40HZ] = 303 /*40Hz*/,
+            [DISPLAY_REFRESH_RATE_50HZ] = 133 /*50Hz*/,
+            [DISPLAY_REFRESH_RATE_60HZ] = 19 /*60Hz*/},
     .hfp = 56,
     .hact = 480,
     .lcd_width = 480,
@@ -270,9 +256,7 @@ const display_configuration_t g_disp_conf[] = {
 
     .dsi_byte_clk_to_pixel_clk_ratio = 56.0f / 18.666667f,
 
-    .vfp = {[DISPLAY_REFRESH_RATE_10HZ] = 16 /*10Hz*/,
-            [DISPLAY_REFRESH_RATE_20HZ] = 16 /*20Hz*/,
-            [DISPLAY_REFRESH_RATE_30HZ] = 16 /*30Hz*/,
+    .vfp = {[DISPLAY_REFRESH_RATE_30HZ] = 16 /*30Hz*/,
             [DISPLAY_REFRESH_RATE_40HZ] = 16 /*40Hz*/,
             [DISPLAY_REFRESH_RATE_50HZ] = 16 /*50Hz*/,
             [DISPLAY_REFRESH_RATE_60HZ] = 16 /*60Hz*/},
@@ -300,12 +284,10 @@ const display_configuration_t g_disp_conf[] = {
 
     .dsi_byte_clk_to_pixel_clk_ratio = 62.0f / 18.518519f,
 
-    .vfp = {[DISPLAY_REFRESH_RATE_10HZ] = 2836 /*10Hz*/,
-            [DISPLAY_REFRESH_RATE_20HZ] = 1144 /*20Hz*/,
-            [DISPLAY_REFRESH_RATE_30HZ] = 580 /*30Hz*/,
-            [DISPLAY_REFRESH_RATE_40HZ] = 298 /*40Hz*/,
-            [DISPLAY_REFRESH_RATE_50HZ] = 129 /*50Hz*/,
-            [DISPLAY_REFRESH_RATE_60HZ] = 16 /*60Hz*/},
+    .vfp = {[DISPLAY_REFRESH_RATE_30HZ] = 587 /*30Hz*/,
+            [DISPLAY_REFRESH_RATE_40HZ] = 303 /*40Hz*/,
+            [DISPLAY_REFRESH_RATE_50HZ] = 133 /*50Hz*/,
+            [DISPLAY_REFRESH_RATE_60HZ] = 19 /*60Hz*/},
     .hfp = 106,
     .hact = 430,
     .lcd_width = 430,
@@ -678,6 +660,7 @@ bool display_init(display_content_mode_t mode) {
     goto cleanup;
   }
 
+  //TODO: shouldn't an inline function be used?
   if (HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.AccumulatedActiveH) != HAL_OK) {
     goto cleanup;
   }
@@ -742,56 +725,30 @@ void display_deinit(display_content_mode_t mode) {
 }
 
 static inline uint32_t refresh_rate_vfp(display_refresh_rate_t refresh_rate) {
-#if 1
   if (refresh_rate < DISPLAY_REFRESH_RATE_COUNT) {
     return g_disp_conf[conf_idx].vfp[refresh_rate];
   } else {
     return g_disp_conf[conf_idx].vfp[DISPLAY_REFRESH_RATE_60HZ];
   }
-#else
-  const display_configuration_t *cfg = &g_disp_conf[conf_idx];
-  const uint32_t f_lut[DISPLAY_REFRESH_RATE_COUNT] = {
-    [DISPLAY_REFRESH_RATE_10HZ] = 10,
-    [DISPLAY_REFRESH_RATE_20HZ] = 20,
-    [DISPLAY_REFRESH_RATE_30HZ] = 30,
-    [DISPLAY_REFRESH_RATE_40HZ] = 40,
-    [DISPLAY_REFRESH_RATE_50HZ] = 50,
-    [DISPLAY_REFRESH_RATE_60HZ] = 60,
-  };
-  float vfp;
-  
-  //htotal = hsa+hbp+ha+hfp
-  //vtotal = vsa+vbp+va+vfp
-  //pixel_cnt = htotal*vtotal = (hsa+hbp+ha+hfp) * (vsa+vbp+va+vfp)
-  //refresh_rate = pixel_clock_hz / pixel_cnt = pixel_clock_hz / ((hsa+hbp+ha+hfp) * (vsa+vbp+va+vfp))
-  //pixel_cnt = pixel_clock_hz / refresh_rate
-  //(hsa+hbp+ha+hfp) * (vsa+vbp+va+vfp) = pixel_clock_hz / refresh_rate
-  //(vsa+vbp+va+vfp) = (pixel_clock_hz / refresh_rate) / (hsa+hbp+ha+hfp)
-  //vfp = ((pixel_clock_hz / refresh_rate) / (hsa+hbp+ha+hfp)) - vsa - vbp - va
-  vfp = ((float)cfg->ltdc_pixel_clock_hz) / ((float)f_lut[refresh_rate]);
-  vfp /= (float)(HSYNC + HBP + cfg->hact + cfg->hfp);
-  vfp -= (VSYNC + VBP + VACT);
-
-  return (uint32_t)vfp; 
-#endif
 }
 
+//HAL not used due to speed.
 static inline void display_refresh_rate_reg_config(display_driver_t *drv) {
-      //LTDC && DSI disable.
-      drv->hlcd_ltdc.Instance->GCR &= ~LTDC_GCR_LTDCEN;
-      drv->hlcd_dsi.Instance->CR &= ~DSI_CR_EN;
+  //LTDC && DSI disable.
+  drv->hlcd_ltdc.Instance->GCR &= ~LTDC_GCR_LTDCEN;
+  drv->hlcd_dsi.Instance->CR &= ~DSI_CR_EN;
 
-      //Set the Vertical Front Porch (VFP).
-      drv->hlcd_dsi.Instance->VVFPCR &= ~(DSI_VVFPCR_VFP);
-      drv->hlcd_dsi.Instance->VVFPCR |= drv->DSIVidCfg.VerticalFrontPorch;  
+  //Set the Vertical Front Porch (VFP).
+  drv->hlcd_dsi.Instance->VVFPCR &= ~(DSI_VVFPCR_VFP);
+  drv->hlcd_dsi.Instance->VVFPCR |= drv->DSIVidCfg.VerticalFrontPorch;  
 
-      //Set Total Height.
-      drv->hlcd_ltdc.Instance->TWCR &= ~(LTDC_TWCR_TOTALH);
-      drv->hlcd_ltdc.Instance->TWCR |= drv->hlcd_ltdc.Init.TotalHeigh;
+  //Set Total Height.
+  drv->hlcd_ltdc.Instance->TWCR &= ~(LTDC_TWCR_TOTALH);
+  drv->hlcd_ltdc.Instance->TWCR |= drv->hlcd_ltdc.Init.TotalHeigh;
 
-      //DSI && LTDC enable.
-      drv->hlcd_dsi.Instance->CR |= DSI_CR_EN;
-      drv->hlcd_ltdc.Instance->GCR |= LTDC_GCR_LTDCEN;
+  //DSI && LTDC enable.
+  drv->hlcd_dsi.Instance->CR |= DSI_CR_EN;
+  drv->hlcd_ltdc.Instance->GCR |= LTDC_GCR_LTDCEN;
 }
 
 #if REFRESH_RATE_POLLING
@@ -846,7 +803,6 @@ void display_refresh_rate_set(display_refresh_rate_t refresh_rate) {
 }
 
 //TODO: this function could be called from the "polling one"
-//HAL not used due to speed.
 void display_refresh_rate_config(void) {
   display_driver_t *drv = &g_display_driver;
   irq_key_t key;

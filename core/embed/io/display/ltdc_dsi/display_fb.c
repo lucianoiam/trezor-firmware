@@ -144,6 +144,9 @@ void display_refresh(void) {
     return;
   }
 
+  //TODO: change the display refresh rate to the maximum, set the timeout
+  //variable to return to 30Hz after some time of inactivity.
+
   fb_queue_put(&drv->ready_frames, fb_queue_take(&drv->empty_frames));
 }
 
@@ -228,7 +231,7 @@ void HAL_LTDC_LineEvenCallback(LTDC_HandleTypeDef *hltdc) {
     display_refresh_rate_config();
 
     //Configure the next line event for standard operation.
-    HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.AccumulatedActiveH);
+    HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.AccumulatedActiveH); //TODO: shouldn't an inline function be used?
   } else {
     refresh_counter++;
 
@@ -252,7 +255,7 @@ void HAL_LTDC_LineEvenCallback(LTDC_HandleTypeDef *hltdc) {
       drv->refresh_rate_state = DISPLAY_REFRESH_RATE_UPDATING;
     } else {
       //Configure the next line event for standard operation.
-      HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.AccumulatedActiveH);
+      HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.AccumulatedActiveH);  //TODO: shouldn't an inline function be used?
     }
 
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
