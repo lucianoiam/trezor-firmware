@@ -1606,8 +1606,8 @@ static void prodtest_tropic_stress_test(cli_t* cli) {
     if (res != LT_L2_HSK_ERR) {
       cli_error(
           cli, CLI_ERROR,
-          "`tropic_custom_session_start() for key %d failed with error %d", i,
-          res);
+          "`tropic_custom_session_start() for key %d failed with error '%s'", i,
+          lt_ret_verbose(res));
       return;
     }
   }
@@ -1625,16 +1625,16 @@ static void prodtest_tropic_stress_test(cli_t* cli) {
     if (res != LT_OK) {
       cli_error(
           cli, CLI_ERROR,
-          "`%d. repetition of tropic_session_invalidate() failed with error %d",
-          i + 1, res);
+          "`Call #%d of tropic_session_invalidate() failed with error '%s'",
+          i + 1, lt_ret_verbose(res));
       return;
     }
     res = tropic_custom_session_start(pairing_key_index);
     if (res != LT_OK) {
       cli_error(cli, CLI_ERROR,
-                "%d. repetition of `tropic_custom_session_start() for key %d "
-                "failed with error %d",
-                i + 1, pairing_key_index, res);
+                "Call #%d of `tropic_custom_session_start()"
+                "failed with error '%s'",
+                i + 1, lt_ret_verbose(res));
       return;
     }
   }
@@ -1650,9 +1650,9 @@ static void prodtest_tropic_stress_test(cli_t* cli) {
       res = lt_mac_and_destroy(tropic_get_handle(), slot_index, buffer, buffer);
       if (res != LT_OK) {
         cli_error(cli, CLI_ERROR,
-                  "%d. repetition of `lt_mac_and_destroy()` for slot %d failed "
-                  "with error %d",
-                  i + 1, slot_index, res);
+                  "Call #%d of `lt_mac_and_destroy()` for slot %d failed "
+                  "with error '%s'",
+                  i + 1, slot_index, lt_ret_verbose(res));
         return;
       }
     }
@@ -1664,8 +1664,8 @@ static void prodtest_tropic_stress_test(cli_t* cli) {
   ecc_slot_t ecc_slot = ECC_SLOT_31;
   res = lt_ecc_key_generate(tropic_get_handle(), ecc_slot, CURVE_ED25519);
   if (res != LT_OK) {
-    cli_error(cli, CLI_ERROR, "`lt_ecc_key_generate()` failed with error %d",
-              res);
+    cli_error(cli, CLI_ERROR, "`lt_ecc_key_generate()` failed with error '%s'",
+              lt_ret_verbose(res));
     return;
   }
   for (int i = 0; i < 10; i++) {
@@ -1674,15 +1674,16 @@ static void prodtest_tropic_stress_test(cli_t* cli) {
                             sizeof(message), signature);
     if (res != LT_OK) {
       cli_error(cli, CLI_ERROR,
-                "%d. repetition of `lt_ecc_eddsa_sign()` failed with error %d",
-                i + 1, res);
+                "Call #%d of `lt_ecc_eddsa_sign()` failed with error '%s'",
+                i + 1, lt_ret_verbose(res));
       lt_ecc_key_erase(tropic_get_handle(), ecc_slot);
       return;
     }
   }
   res = lt_ecc_key_erase(tropic_get_handle(), ecc_slot);
   if (res != LT_OK) {
-    cli_error(cli, CLI_ERROR, "`lt_ecc_key_erase()` failed with error %d", res);
+    cli_error(cli, CLI_ERROR, "`lt_ecc_key_erase()` failed with error '%s'",
+              lt_ret_verbose(res));
     return;
   }
 
