@@ -1271,11 +1271,11 @@ static storage_unlock_result_t unlock(const uint8_t *pin, size_t pin_len,
                               sizeof(optiga_hmac_reset_key),
                               &optiga_hmac_reset_key_len) != sectrue ||
         optiga_hmac_reset_key_len != SHA256_DIGEST_LENGTH) {
-      return UNLOCK_OPTIGA_HMAC_RESET_FAILED;
+      return UNLOCK_OPTIGA_GET_HMAC_RESET_KEY_FAILED;
     }
     if (!optiga_pin_reset_hmac_counter(ui_progress, optiga_hmac_reset_key)) {
       memzero(optiga_hmac_reset_key, sizeof(optiga_hmac_reset_key));
-      return UNLOCK_OPTIGA_COUNTER_RESET_FAILED;
+      return UNLOCK_OPTIGA_HMAC_COUNTER_RESET_FAILED;
     }
     memzero(optiga_hmac_reset_key, sizeof(optiga_hmac_reset_key));
   }
@@ -1290,7 +1290,7 @@ static storage_unlock_result_t unlock(const uint8_t *pin, size_t pin_len,
                             &tropic_mac_and_destroy_reset_key_len) != sectrue ||
       tropic_mac_and_destroy_reset_key_len !=
           sizeof(tropic_mac_and_destroy_reset_key)) {
-    return UNLOCK_TROPIC_RESET_MAC_AND_DESTROY_FAILED;
+    return UNLOCK_GET_TROPIC_MAC_AND_DESTROY_RESET_KEY_FAILED;
   }
   if (!tropic_pin_reset_slots(ui_progress, ctr,
                               tropic_mac_and_destroy_reset_key)) {
