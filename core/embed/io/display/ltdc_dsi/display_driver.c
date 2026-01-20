@@ -297,8 +297,11 @@ const display_configuration_t g_disp_conf[] = {
 };
 
 const uint8_t conf_idx = 0;
-uint32_t refresh_rate_change_tryouts = 0;
-uint32_t timeout_max = 0;
+volatile uint32_t refresh_rate_change_tryouts = 0;
+volatile uint32_t timeout_max = 0;
+
+volatile uint32_t LTDC_CPSR_stamp = 0xFFFFFFFF;
+volatile uint32_t LTDC_CDSR_stamp = 0xFFFFFFFF;
 
 static void display_pll_deinit(void) { __HAL_RCC_PLL3_DISABLE(); }
 
@@ -644,14 +647,16 @@ bool display_init(display_content_mode_t mode) {
   if (!display_pll_init()) {
     goto cleanup;
   }
+
   if (!display_dsi_init(drv)) {
     goto cleanup;
   }
+
   if (!display_ltdc_init(drv, fb_addr)) {
     goto cleanup;
   }
 
-  /* Start DSI */
+  //TODO: DSI already enabled in display_dsi_init. It should be reviewed.
   if (HAL_DSI_Start(&drv->hlcd_dsi) != HAL_OK) {
     goto cleanup;
   }
@@ -675,6 +680,15 @@ bool display_init(display_content_mode_t mode) {
   __HAL_LTDC_ENABLE_IT(&drv->hlcd_ltdc, LTDC_IT_LI | LTDC_IT_FU | LTDC_IT_TE);
 
   gfx_bitblt_init();
+
+  //Workaround to avoid a wrong image display for 1st refresh rate change.
+  //TODO: review the configuration sequence of LTDC and DSI to avoid this.
+  __HAL_LTDC_DISABLE(&drv->hlcd_ltdc);
+  __HAL_DSI_DISABLE(&drv->hlcd_dsi);
+
+  __HAL_DSI_ENABLE(&drv->hlcd_dsi);
+  __HAL_LTDC_ENABLE(&drv->hlcd_ltdc);
+  //Workaround end.
 
   drv->refresh_rate_state = DISPLAY_REFRESH_RATE_IDLE;
 
@@ -734,9 +748,16 @@ static inline uint32_t refresh_rate_vfp(display_refresh_rate_t refresh_rate) {
 
 //HAL not used due to speed.
 static inline void display_refresh_rate_reg_config(display_driver_t *drv) {
+  LTDC_CPSR_stamp = (drv->hlcd_ltdc.Instance->CPSR & LTDC_CPSR_CYPOS_Msk) >> LTDC_CPSR_CYPOS_Pos;
+  LTDC_CDSR_stamp = (drv->hlcd_ltdc.Instance->CDSR & LTDC_CDSR_VSYNCS_Msk) >> LTDC_CDSR_VSYNCS_Pos;
+
   //LTDC && DSI disable.
-  drv->hlcd_ltdc.Instance->GCR &= ~LTDC_GCR_LTDCEN;
-  drv->hlcd_dsi.Instance->CR &= ~DSI_CR_EN;
+  __HAL_LTDC_DISABLE(&drv->hlcd_ltdc);
+  __HAL_DSI_DISABLE(&drv->hlcd_dsi);
+
+  if ((LTDC_CPSR_stamp > 1) || (LTDC_CDSR_stamp == 0)) {
+    __NOP();
+  }
 
   //Set the Vertical Front Porch (VFP).
   drv->hlcd_dsi.Instance->VVFPCR &= ~(DSI_VVFPCR_VFP);
@@ -747,8 +768,8 @@ static inline void display_refresh_rate_reg_config(display_driver_t *drv) {
   drv->hlcd_ltdc.Instance->TWCR |= drv->hlcd_ltdc.Init.TotalHeigh;
 
   //DSI && LTDC enable.
-  drv->hlcd_dsi.Instance->CR |= DSI_CR_EN;
-  drv->hlcd_ltdc.Instance->GCR |= LTDC_GCR_LTDCEN;
+  __HAL_DSI_ENABLE(&drv->hlcd_dsi);
+  __HAL_LTDC_ENABLE(&drv->hlcd_ltdc);
 }
 
 #if REFRESH_RATE_POLLING

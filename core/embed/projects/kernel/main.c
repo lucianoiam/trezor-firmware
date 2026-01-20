@@ -110,8 +110,11 @@
 #include "../../io/display/ltdc_dsi/display_internal.h"
 
 extern volatile uint32_t refresh_counter;
-extern uint32_t refresh_rate_change_tryouts;
-extern uint32_t timeout_max;
+extern volatile uint32_t refresh_rate_change_tryouts;
+extern volatile uint32_t timeout_max;
+
+extern volatile uint32_t LTDC_CPSR_stamp;
+extern volatile uint32_t LTDC_CDSR_stamp;
 
 void drivers_init() {
 #ifdef SECURE_MODE
@@ -206,9 +209,7 @@ void drivers_init() {
 // Returns when the coreapp task is terminated
 static void kernel_loop(applet_t *coreapp) {
   uint32_t time0 = ticks();
-  uint32_t time1 = time0 + 1000; //TODO: there is problem at transition
-  //from bootloader to FW with screen "flicker" of text "Trezor Safe 7"... The
-  //1000 ms timeout is to avoid that problem. Needs investigation.
+  uint32_t time1 = time0 + 5000; //5s delay for the 1st refresh rate change
 
 #if SECURE_MODE && USE_STORAGE_HWKEY
   secure_aes_set_applet(coreapp);
@@ -235,13 +236,19 @@ static void kernel_loop(applet_t *coreapp) {
       float frequency;
 
       irq_key_t key = irq_lock();
-      frequency = refresh_counter / (float)(time_tmp - time0);
+      frequency = (refresh_counter * 1000.0f) / (float)(time_tmp - time0);
       refresh_counter = 0;
       irq_unlock(key);
 
       //TODO: to revise the printed text
       dbg_printf("frequency=%d.%d, refresh_rate_change_tryouts=%d, timeout_max=%d \n", (int)frequency, (int)((frequency-(int)frequency)*100), (int)refresh_rate_change_tryouts, (int)timeout_max);
+      //dbg_printf("LTDC_CPSR.CYPOS=%X, LTDC_CDSR.VSYNCS=%X\n", (unsigned int)LTDC_CPSR_stamp, (unsigned int)LTDC_CDSR_stamp);
       UNUSED(frequency);
+
+      key = irq_lock();
+      LTDC_CPSR_stamp = 0xFFFFFFFF;
+      LTDC_CDSR_stamp = 0xFFFFFFFF;
+      irq_unlock(key);
 
       refresh_rate = refresh_rate == DISPLAY_REFRESH_RATE_30HZ ? DISPLAY_REFRESH_RATE_60HZ : DISPLAY_REFRESH_RATE_30HZ;
 
