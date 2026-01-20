@@ -225,6 +225,9 @@ void HAL_LTDC_LineEvenCallback(LTDC_HandleTypeDef *hltdc) {
     drv->update_pending = 3;
   }
 
+  //Configure the next line event for standard operation.
+  HAL_LTDC_ProgramLineEvent(&drv->hlcd_ltdc, drv->hlcd_ltdc.Init.AccumulatedActiveH);
+
   HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);  
 #else
   if (drv->refresh_rate_state == DISPLAY_REFRESH_RATE_UPDATING) {
