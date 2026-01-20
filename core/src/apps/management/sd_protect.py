@@ -84,7 +84,7 @@ async def _sd_protect_enable(msg: SdProtect) -> Success:
         # Set the salt in storage
         config.change_pin(pin, salt)
         # Cannot return false, because the device was unlocked by the PIN.
-    except wire.FirmwareError:
+    except RuntimeError:
         # Failed to set salt in storage. Clean up the prepared salt file.
         try:
             storage_sd_salt.remove_sd_salt()
@@ -118,7 +118,9 @@ async def _sd_protect_disable(msg: SdProtect) -> Success:
     if not config.unlock(pin, salt):
         await error_pin_invalid()
     # Remove salt from storage.
-    if not config.change_pin(pin, None):
+    try:
+        config.change_pin(pin, None)
+    except RuntimeError:
         raise wire.FirmwareError("Failed to remove SD salt")
 
     storage_device.set_sd_salt_auth_key(None)
@@ -159,7 +161,7 @@ async def _sd_protect_refresh(msg: SdProtect) -> Success:
 
     try:
         config.change_pin(pin, new_salt)
-    except wire.FirmwareError:
+    except RuntimeError:
         raise wire.FirmwareError("Failed to set new salt in storage")
 
     storage_device.set_sd_salt_auth_key(new_auth_key)
