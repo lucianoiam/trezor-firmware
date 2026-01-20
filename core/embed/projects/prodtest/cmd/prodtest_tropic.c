@@ -1595,7 +1595,7 @@ static void prodtest_tropic_stress_test(cli_t* cli) {
   lt_ret_t res = LT_FAIL;
   pkey_index_t pairing_key_index = -1;
 
-  // Find which pairing key is available
+  // Find an available pairing key
   for (pkey_index_t i = TROPIC_FACTORY_PAIRING_KEY_SLOT;
        i <= TROPIC_PRIVILEGED_PAIRING_KEY_SLOT; i++) {
     res = tropic_custom_session_start(i);
@@ -1617,7 +1617,9 @@ static void prodtest_tropic_stress_test(cli_t* cli) {
     return;
   }
 
-  // Test `lt_session_start`
+  cli_trace(cli, "Established session using pairing key %d", pairing_key_index);
+
+  // Test `lt_session_start()`
   for (int i = 0; i < 10; i++) {
     res = tropic_session_invalidate();
     if (res != LT_OK) {
@@ -1637,7 +1639,7 @@ static void prodtest_tropic_stress_test(cli_t* cli) {
     }
   }
 
-  // Test `lt_mac_and_destroy`
+  // Test `lt_mac_and_destroy()`
   for (int slot_index = TROPIC_FIRST_MAC_AND_DESTROY_SLOT_UNPRIVILEGED;
        slot_index < TROPIC_FIRST_MAC_AND_DESTROY_SLOT_UNPRIVILEGED +
                         TROPIC_MAC_AND_DESTROY_SLOTS_COUNT;
@@ -1656,7 +1658,7 @@ static void prodtest_tropic_stress_test(cli_t* cli) {
     }
   }
 
-  // Test `lt_ecc_key_generate`
+  // Test `lt_ecc_key_generate()`
   uint8_t message[32] = {0};
   ed25519_signature signature = {0};
   ecc_slot_t ecc_slot = ECC_SLOT_31;
