@@ -199,7 +199,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_0(mod_trezorconfig_get_pin_rem_obj,
 ///     new_ext_salt: AnyBytes | None,
 /// ) -> bool:
 ///     """
-///     Change PIN and external salt. Returns True on success, False on failure.
+///     Change PIN and external salt. Returns True on success, False on entering the wipe code.
 ///     Has to be run with unlocked storage.
 ///     """
 STATIC mp_obj_t mod_trezorconfig_change_pin(size_t n_args,

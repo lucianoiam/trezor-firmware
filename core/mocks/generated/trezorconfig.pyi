@@ -64,7 +64,7 @@ def change_pin(
     new_ext_salt: AnyBytes | None,
 ) -> bool:
     """
-    Change PIN and external salt. Returns True on success, False on failure.
+    Change PIN and external salt. Returns True on success, False on entering the wipe code.
     Has to be run with unlocked storage.
     """
 
