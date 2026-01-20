@@ -237,7 +237,7 @@ float bat_fetch_cycle_increment(void) {
     return 0.0f;
   }
 
-  float cycle_increment = (float)((uint16_t)drv->cycle_counter);
+  float cycle_increment = drv->cycle_counter;
   drv->cycle_counter = 0.0f;
   return cycle_increment;
 }
