@@ -73,7 +73,7 @@ def test_getpolicyaddress(session: Session):
         policy_xpubs,
         policy_blocks,
         mac,
-        0,
+        1, # index
         False,
         show_display=True,
     ).address

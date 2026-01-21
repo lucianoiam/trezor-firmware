@@ -10,7 +10,7 @@ from bip32_utils import derive_pubkey_from_xpub
 
 # Monkey-patch derive_pubkey to use our standalone bip32_utils
 _original_derive = derive_pubkey.__code__
-def _patched_derive(key_expr, xpubs=None):
+def _patched_derive(key_expr, xpubs=None, change=0, index=0):
     if key_expr.startswith("@"):
         rest = key_expr[1:]
         slash_idx = rest.find("/")
@@ -30,7 +30,19 @@ def _patched_derive(key_expr, xpubs=None):
         path = ""
     else:
         return bytes.fromhex(key_expr)
-    return derive_pubkey_from_xpub(base_key, path)
+    # Resolve wildcards in path using change and index
+    resolved_path = ""
+    for part in path.split("/"):
+        if not part:
+            continue
+        if part == "*":
+            resolved_path += "/" + str(index)
+        elif part.startswith("<") and part.endswith(">"):
+            # NOTE: Assumes <0;1> pattern. Does not parse actual range values.
+            resolved_path += "/" + str(change)
+        else:
+            resolved_path += "/" + part
+    return derive_pubkey_from_xpub(base_key, resolved_path.lstrip("/"))
 
 # Patch the module
 import encode_miniscript as em

@@ -14,15 +14,17 @@ if TYPE_CHECKING:
 async def get_policy_address(
     msg: GetPolicyAddress, keychain: Keychain, coin: CoinInfo
 ) -> Address:
-    from ubinascii import hexlify
-
     from trezor import protobuf
-    from trezor.crypto import bip32, hashlib, hmac
+    from trezor.crypto import hashlib, hmac
     from trezor.messages import Address
     from trezor.ui.layouts import show_address
     from trezor.wire import DataError
 
+    from trezor.crypto import bip32
+
     from .addresses import ecdsa_hash_pubkey, encode_bech32_address
+    from .encode_miniscript import encode_miniscript
+    from .parse_miniscript import parse_miniscript
 
     key = keychain.derive_slip21([b"SLIP-0019", b"Trezor-Policy"]).key()
 
@@ -34,36 +36,37 @@ async def get_policy_address(
     if policy_mac != msg.mac:
         raise DataError("Invalid MAC")
 
-    # Deserialize xpubs
-    # Bitcoin mainnet xpub version: 0x0488b21e, testnet: 0x043587cf
-    xpub_version = 0x0488B21E if coin.coin_name == "Bitcoin" else 0x043587CF
-    node1 = bip32.deserialize_public(msg.policy.xpubs[0], xpub_version, coin.curve_name)
+    # Old hardcoded script for reference
+    #xpub_version = 0x0488B21E if coin.coin_name == "Bitcoin" else 0x043587CF
+    #node1 = bip32.deserialize_public(msg.policy.xpubs[0], xpub_version, coin.curve_name)
+    #node1.derive(int(msg.change), True)
+    #node1.derive(msg.index, True)
+    #pk1 = node1.public_key()
+    #
+    #node2 = bip32.deserialize_public(msg.policy.xpubs[1], xpub_version, coin.curve_name)
+    #node2.derive(int(msg.change), True)
+    #node2.derive(msg.index, True)
+    #pk2 = node2.public_key()
+    #pk2_hash = ecdsa_hash_pubkey(pk2, coin)
+    #
+    #assert msg.policy.blocks <= 16
+    #script = (
+    #    b"\x21"  # OP_PUSHBYTES_33
+    #    + pk1
+    #    + b"\xac\x73\x64\x76\xa9\x14"  # OP_CHECKSIG OP_IFDUP OP_NOTIF OP_DUP OP_HASH160 OP_PUSHBYTES_20
+    #    + pk2_hash  # pk2_hash (20 bytes)
+    #    + b"\x88\xad"  # OP_EQUALVERIFY OP_CHECKSIGVERIFY
+    #    + bytes([0x50 + msg.policy.blocks])  # OP_1 to OP_16 (OP_PUSHNUM_n)
+    #    + b"\xb2\x68"  # OP_CSV OP_ENDIF
+    #)
 
-    node1.derive(int(msg.change), True)
-    node1.derive(msg.index + 1, True)
-    pk1 = node1.public_key()
-    print(f"pk1: {hexlify(pk1)}")
-
-    node2 = bip32.deserialize_public(msg.policy.xpubs[1], xpub_version, coin.curve_name)
-    node2.derive(int(msg.change), True)
-    node2.derive(msg.index + 1, True)
-    pk2 = node2.public_key()
-    print(f"pk2: {hexlify(pk2)}")
-    pk2_hash = ecdsa_hash_pubkey(pk2, coin)
-    print(f"pk2_hash: {hexlify(pk2_hash)}")
-
-    # Build the witness script
-    assert msg.policy.blocks <= 16
-    script = (
-        b"\x21"  # OP_PUSHBYTES_33
-        + pk1
-        + b"\xac\x73\x64\x76\xa9\x14"  # OP_CHECKSIG OP_IFDUP OP_NOTIF OP_DUP OP_HASH160 OP_PUSHBYTES_20
-        + pk2_hash  # pk2_hash (20 bytes)
-        + b"\x88\xad"  # OP_EQUALVERIFY OP_CHECKSIGVERIFY
-        + bytes([0x50 + msg.policy.blocks])  # OP_1 to OP_16 (OP_PUSHNUM_n)
-        + b"\xb2\x68"  # OP_CSV OP_ENDIF
+    parsed_script = parse_miniscript(msg.policy.template)
+    script, _ = encode_miniscript(
+        parsed_script,
+        list(msg.policy.xpubs),
+        change=int(msg.change),
+        index=msg.index,
     )
-    print(f"script: {hexlify(script)}")
 
     # Hash the witness script with SHA256
     witness_script_hash = hashlib.sha256(script).digest()

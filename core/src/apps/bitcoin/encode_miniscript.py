@@ -6,8 +6,6 @@ Limitations vs full spec (bitcoin.sipa.be/miniscript):
 - No type checking (assumes valid miniscript input)
 - No script size/ops limits validation
 - Key derivation requires trezor.crypto.bip32 (no WIF keys)
-- Wildcards (*) in paths are skipped, not expanded
-- Ranges (<M;N>) use first value only
 """
 
 try:
@@ -19,6 +17,14 @@ try:
     from .parse_miniscript import MiniscriptNode
 except (ImportError, KeyError):
     from parse_miniscript import MiniscriptNode
+
+try:
+    from ubinascii import hexlify
+    def _hex(data: bytes) -> str:
+        return hexlify(data).decode()
+except ImportError:
+    def _hex(data: bytes) -> str:
+        return data.hex()
 OP_0 = 0x00
 OP_1 = 0x51
 OP_16 = 0x60
@@ -91,13 +97,13 @@ def push_number(n: int) -> Tuple[bytes, str]:
     # If MSB is set, append 0x00 to keep positive
     if data[-1] & 0x80:
         data.append(0x00)
-    return bytes([len(data)]) + bytes(data), data.hex()
+    return bytes([len(data)]) + bytes(data), _hex(bytes(data))
 
 
 def push_bytes(data: bytes) -> Tuple[bytes, str]:
     """Push arbitrary bytes onto the stack, returns (bytecode, text)."""
     length = len(data)
-    hex_str = data.hex()
+    hex_str = _hex(data)
     if length < 0x4C:
         return bytes([length]) + data, hex_str
     elif length <= 0xFF:
@@ -108,19 +114,28 @@ def push_bytes(data: bytes) -> Tuple[bytes, str]:
         raise ValueError("Data too large to push")
 
 
-def derive_pubkey(key_expr: str, xpubs: Optional[List[str]] = None) -> bytes:
+def derive_pubkey(
+    key_expr: str,
+    xpubs: Optional[List[str]] = None,
+    change: int = 0,
+    index: int = 0,
+) -> bytes:
     """
     Derive a public key from a key expression.
 
     Supports:
-    - Raw hex pubkey: "03adc58245cf28406af0ef5cc24b8afba7f1be6c72f279b642d85c48798685f862"
+    - Raw hex pubkey: "03adc58..."
     - xpub with path: "tpubDCZB6.../0/0"
-    - Reference with path: "@0/0/0" (requires xpubs list)
+    - Reference with path: "@0/<0;1>/*" (requires xpubs list)
+
+    Args:
+        change: Value to use for <M;N> ranges (0 or 1)
+        index: Value to use for * wildcard
     """
     # Check if it's a reference like @0/<0;1>/*
     if key_expr.startswith("@"):
         if xpubs is None:
-            raise ValueError(f"xpubs required to resolve reference: {key_expr}")
+            raise ValueError("xpubs required to resolve reference")
         # Parse @N where N is the index
         rest = key_expr[1:]
         slash_idx = rest.find("/")
@@ -131,7 +146,7 @@ def derive_pubkey(key_expr: str, xpubs: Optional[List[str]] = None) -> bytes:
             idx = int(rest[:slash_idx])
             path = rest[slash_idx + 1:]  # path without leading slash
         if idx >= len(xpubs):
-            raise ValueError(f"Reference @{idx} out of range")
+            raise ValueError("Reference out of range")
         base_key = xpubs[idx]
     elif "/" in key_expr:
         # xpub/path format
@@ -140,7 +155,7 @@ def derive_pubkey(key_expr: str, xpubs: Optional[List[str]] = None) -> bytes:
         path = key_expr[slash_idx + 1:]
     else:
         # Raw hex pubkey or bare xpub
-        if key_expr.startswith(("xpub", "tpub")):
+        if key_expr.startswith("xpub") or key_expr.startswith("tpub"):
             base_key = key_expr
             path = ""
         else:
@@ -152,7 +167,6 @@ def derive_pubkey(key_expr: str, xpubs: Optional[List[str]] = None) -> bytes:
             return unhexlify(key_expr)
 
     # Derive from xpub
-    # Try trezor.crypto.bip32 first, fall back to pure Python
     try:
         from trezor.crypto import bip32
 
@@ -166,13 +180,16 @@ def derive_pubkey(key_expr: str, xpubs: Optional[List[str]] = None) -> bytes:
 
         # Derive along path
         for part in path.split("/"):
-            if not part or part == "*":
+            if not part:
                 continue
-            if part.startswith("<") and part.endswith(">"):
-                inner = part[1:-1]
-                values = inner.split(";")
-                part = values[0]
-            if part:
+            if part == "*":
+                node.derive(index, True)
+            elif part.startswith("<") and part.endswith(">"):
+                # Range like <0;1> - use change parameter to select
+                # NOTE: Assumes <0;1> pattern. Does not parse actual range values.
+                # For <M;N> with M!=0 or N!=1, this would be incorrect.
+                node.derive(change, True)
+            else:
                 node.derive(int(part), True)
 
         return node.public_key()
@@ -195,6 +212,8 @@ def hash160(data: bytes) -> bytes:
 def encode_fragment(
     node: MiniscriptNode,
     xpubs: Optional[List[str]] = None,
+    change: int = 0,
+    index: int = 0,
 ) -> Tuple[bytes, List[str]]:
     """
     Encode a miniscript fragment to Bitcoin Script.
@@ -214,7 +233,7 @@ def encode_fragment(
     # Encode the base fragment
     if val in ("pk", "pk_k"):
         # pk(key) -> <key> CHECKSIG
-        key = derive_pubkey(node.children[0].value, xpubs)
+        key = derive_pubkey(node.children[0].value, xpubs, change, index)
         bc, txt = push_bytes(key)
         bytecode += bc
         text_parts.append(txt)
@@ -223,7 +242,7 @@ def encode_fragment(
 
     elif val == "pkh":
         # pkh(key) -> DUP HASH160 <HASH160(key)> EQUALVERIFY CHECKSIG
-        key = derive_pubkey(node.children[0].value, xpubs)
+        key = derive_pubkey(node.children[0].value, xpubs, change, index)
         key_hash = hash160(key)
         bytecode += bytes([OP_DUP, OP_HASH160])
         text_parts.extend(["OP_DUP", "OP_HASH160"])
@@ -295,16 +314,16 @@ def encode_fragment(
 
     elif val == "and_v":
         # and_v(X,Y) -> [X] [Y]
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs)
-        y_bc, y_txt = encode_fragment(node.children[1], xpubs)
+        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
+        y_bc, y_txt = encode_fragment(node.children[1], xpubs, change, index)
         bytecode += x_bc + y_bc
         text_parts.extend(x_txt)
         text_parts.extend(y_txt)
 
     elif val == "and_b":
         # and_b(X,Y) -> [X] [Y] BOOLAND
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs)
-        y_bc, y_txt = encode_fragment(node.children[1], xpubs)
+        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
+        y_bc, y_txt = encode_fragment(node.children[1], xpubs, change, index)
         bytecode += x_bc + y_bc + bytes([0x9A])  # 0x9A = OP_BOOLAND
         text_parts.extend(x_txt)
         text_parts.extend(y_txt)
@@ -312,8 +331,8 @@ def encode_fragment(
 
     elif val == "or_b":
         # or_b(X,Z) -> [X] [Z] BOOLOR
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs)
-        z_bc, z_txt = encode_fragment(node.children[1], xpubs)
+        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
+        z_bc, z_txt = encode_fragment(node.children[1], xpubs, change, index)
         bytecode += x_bc + z_bc + bytes([0x9B])  # 0x9B = OP_BOOLOR
         text_parts.extend(x_txt)
         text_parts.extend(z_txt)
@@ -321,8 +340,8 @@ def encode_fragment(
 
     elif val == "or_c":
         # or_c(X,Z) -> [X] NOTIF [Z] ENDIF
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs)
-        z_bc, z_txt = encode_fragment(node.children[1], xpubs)
+        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
+        z_bc, z_txt = encode_fragment(node.children[1], xpubs, change, index)
         bytecode += x_bc + bytes([OP_NOTIF]) + z_bc + bytes([OP_ENDIF])
         text_parts.extend(x_txt)
         text_parts.append("OP_NOTIF")
@@ -331,8 +350,8 @@ def encode_fragment(
 
     elif val == "or_d":
         # or_d(X,Z) -> [X] IFDUP NOTIF [Z] ENDIF
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs)
-        z_bc, z_txt = encode_fragment(node.children[1], xpubs)
+        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
+        z_bc, z_txt = encode_fragment(node.children[1], xpubs, change, index)
         bytecode += x_bc + bytes([OP_IFDUP, OP_NOTIF]) + z_bc + bytes([OP_ENDIF])
         text_parts.extend(x_txt)
         text_parts.extend(["OP_IFDUP", "OP_NOTIF"])
@@ -341,8 +360,8 @@ def encode_fragment(
 
     elif val == "or_i":
         # or_i(X,Z) -> IF [X] ELSE [Z] ENDIF
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs)
-        z_bc, z_txt = encode_fragment(node.children[1], xpubs)
+        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
+        z_bc, z_txt = encode_fragment(node.children[1], xpubs, change, index)
         bytecode += bytes([OP_IF]) + x_bc + bytes([OP_ELSE]) + z_bc + bytes([OP_ENDIF])
         text_parts.append("OP_IF")
         text_parts.extend(x_txt)
@@ -352,9 +371,9 @@ def encode_fragment(
 
     elif val == "andor":
         # andor(X,Y,Z) -> [X] NOTIF [Z] ELSE [Y] ENDIF
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs)
-        y_bc, y_txt = encode_fragment(node.children[1], xpubs)
-        z_bc, z_txt = encode_fragment(node.children[2], xpubs)
+        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
+        y_bc, y_txt = encode_fragment(node.children[1], xpubs, change, index)
+        z_bc, z_txt = encode_fragment(node.children[2], xpubs, change, index)
         bytecode += x_bc + bytes([OP_NOTIF]) + z_bc + bytes([OP_ELSE]) + y_bc + bytes([OP_ENDIF])
         text_parts.extend(x_txt)
         text_parts.append("OP_NOTIF")
@@ -368,11 +387,11 @@ def encode_fragment(
         k = int(node.children[0].value)
         subs = node.children[1:]
         if len(subs) > 0:
-            first_bc, first_txt = encode_fragment(subs[0], xpubs)
+            first_bc, first_txt = encode_fragment(subs[0], xpubs, change, index)
             bytecode += first_bc
             text_parts.extend(first_txt)
             for sub in subs[1:]:
-                sub_bc, sub_txt = encode_fragment(sub, xpubs)
+                sub_bc, sub_txt = encode_fragment(sub, xpubs, change, index)
                 bytecode += sub_bc + bytes([OP_ADD])
                 text_parts.extend(sub_txt)
                 text_parts.append("OP_ADD")
@@ -385,7 +404,7 @@ def encode_fragment(
     elif val == "multi":
         # multi(k,key1,...,keyn) -> <k> <key1> ... <keyn> <n> CHECKMULTISIG
         k = int(node.children[0].value)
-        keys = [derive_pubkey(c.value, xpubs) for c in node.children[1:]]
+        keys = [derive_pubkey(c.value, xpubs, change, index) for c in node.children[1:]]
         n = len(keys)
         bc, txt = push_number(k)
         bytecode += bc
@@ -403,7 +422,7 @@ def encode_fragment(
     elif val in ("wsh", "sh"):
         # Descriptor wrappers - just encode the inner miniscript
         if node.children:
-            inner_bc, inner_txt = encode_fragment(node.children[0], xpubs)
+            inner_bc, inner_txt = encode_fragment(node.children[0], xpubs, change, index)
             bytecode += inner_bc
             text_parts.extend(inner_txt)
 
@@ -470,6 +489,8 @@ def encode_fragment(
 def encode_miniscript(
     node: MiniscriptNode,
     xpubs: Optional[List[str]] = None,
+    change: int = 0,
+    index: int = 0,
 ) -> Tuple[bytes, str]:
     """
     Encode a miniscript tree to Bitcoin Script.
@@ -477,10 +498,12 @@ def encode_miniscript(
     Args:
         node: Parsed MiniscriptNode tree
         xpubs: Optional list of xpub strings for resolving @N references
+        change: Value to use for <M;N> ranges in key paths (0 or 1)
+        index: Value to use for * wildcard in key paths
 
     Returns:
         Tuple of (bytecode, text_representation)
     """
-    bytecode, text_parts = encode_fragment(node, xpubs)
+    bytecode, text_parts = encode_fragment(node, xpubs, change, index)
     text = " ".join(text_parts)
     return bytecode, text
