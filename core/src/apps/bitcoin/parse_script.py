@@ -1,0 +1,241 @@
+try:
+    from typing import List, Optional
+except ImportError:
+    pass
+
+SEMANTIC_OPERATOR = 0
+SEMANTIC_OPERAND = 1
+
+ALNUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+
+def isalnum(c: str) -> bool:
+    return c in ALNUM
+
+
+class ScriptNode:
+    """Node representing a miniscript fragment, preserving type modifiers."""
+
+    def __init__(
+        self,
+        value: str,
+        sem_type: int,
+        children: Optional[List["ScriptNode"]] = None,
+    ) -> None:
+        self.value = value
+        self.sem_type = sem_type
+        self.children: List["ScriptNode"] = children if children else []
+
+    @property
+    def normalized_value(self) -> str:
+        """Return policy-normalized value (strips type modifiers)."""
+        val = self.value
+        # Strip prefix wrappers (a:, s:, c:, d:, v:, j:, n:, l:, u:, t:)
+        while len(val) >= 2 and val[1] == ":" and val[0] in "ascdvjnlut":
+            val = val[2:]
+        # Normalize operator names: or_d -> or, and_v -> and, etc.
+        if val.startswith("or_"):
+            return "or"
+        if val.startswith("and_"):
+            return "and"
+        # Normalize key types: pk_k, pk_h, pkh -> pk
+        if val in ("pk_k", "pk_h", "pkh"):
+            return "pk"
+        # Skip descriptor wrappers
+        if val in ("wsh", "sh"):
+            return ""
+        return val
+
+    def _get_condition_text(self, xpubs: Optional[List[str]] = None) -> str:
+        """Get human-readable condition for a leaf node."""
+        val = self.normalized_value
+        if val == "pk":
+            for c in self.children:
+                return "provides signature " + c.value
+        elif val == "older":
+            for c in self.children:
+                return "ensures coins older than " + c.value + " blk"
+        return val
+
+    def _collect_and_conditions(self, xpubs: Optional[List[str]] = None) -> List[str]:
+        """Collect all conditions under an AND node."""
+        conditions: List[str] = []
+        stack: List["ScriptNode"] = [self]
+
+        while len(stack) > 0:
+            node = stack.pop()
+            if node.normalized_value == "and":
+                for child in node.children:
+                    stack.append(child)
+            else:
+                conditions.append(node._get_condition_text(xpubs))
+
+        return conditions
+
+    def get_spending_paths(self, xpubs: Optional[List[str]] = None) -> List[str]:
+        """Build spending paths by traversing OR branches."""
+        raw_paths: List[str] = []
+        stack: List["ScriptNode"] = [self]
+
+        while len(stack) > 0:
+            node = stack.pop()
+            val = node.normalized_value
+
+            # Skip empty (wsh, sh wrappers)
+            if val == "":
+                for child in node.children:
+                    stack.append(child)
+                continue
+
+            if val == "or":
+                for child in reversed(node.children):
+                    stack.append(child)
+            elif val == "and":
+                conditions = node._collect_and_conditions(xpubs)
+                conditions.reverse()
+                if len(conditions) > 0:
+                    if len(conditions) == 1:
+                        raw_paths.append(conditions[0])
+                    else:
+                        path_text = "both " + conditions[0]
+                        for i in range(1, len(conditions)):
+                            if i == len(conditions) - 1:
+                                path_text = path_text + ", and " + conditions[i]
+                            else:
+                                path_text = path_text + ", " + conditions[i]
+                        raw_paths.append(path_text)
+            else:
+                raw_paths.append(node._get_condition_text(xpubs))
+
+        paths: List[str] = []
+        for i in range(len(raw_paths)):
+            path_num = i + 1
+            if path_num == 1:
+                paths.append(str(path_num) + ". Spend if " + raw_paths[i])
+            else:
+                paths.append(str(path_num) + ". Alternatively, spend if " + raw_paths[i])
+
+        return paths
+
+    def tree_repr(self, normalize: bool = False) -> str:
+        """Iterative tree representation."""
+        lines: List[str] = []
+        stack: List[tuple] = [(self, "", True, True)]
+
+        while len(stack) > 0:
+            node, prefix, is_last, is_root = stack.pop()
+
+            # Get display value
+            if normalize:
+                node_val = node.normalized_value
+            else:
+                node_val = node.value
+
+            # Skip empty values (wsh, sh when normalized)
+            if node_val == "":
+                for child in reversed(node.children):
+                    stack.append((child, prefix, is_last, is_root))
+                continue
+
+            # Collapse single-child operators: show as "parent(child)"
+            if node.sem_type == SEMANTIC_OPERATOR and len(node.children) == 1:
+                first_child = node.children[0]
+                if normalize:
+                    child_val = first_child.normalized_value
+                else:
+                    child_val = first_child.value
+                display_value = node_val + "(" + child_val + ")"
+                current_children = first_child.children
+            else:
+                display_value = node_val
+                current_children = node.children
+
+            # Build line
+            if is_root:
+                lines.append(display_value)
+                child_prefix = ""
+            else:
+                if is_last:
+                    lines.append(prefix + "L__ " + display_value)
+                    child_prefix = prefix + "    "
+                else:
+                    lines.append(prefix + "|-- " + display_value)
+                    child_prefix = prefix + "|   "
+
+            # Add children in reverse order
+            child_count = len(current_children)
+            idx = child_count - 1
+            for child in reversed(current_children):
+                is_last_child = idx == child_count - 1
+                stack.append((child, child_prefix, is_last_child, False))
+                idx = idx - 1
+
+        return "\n".join(lines) + "\n"
+
+
+def tokenize(text: str) -> List[str]:
+    tokens: List[str] = []
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if c in " \t\n\r":
+            i += 1
+        elif c in "(),":
+            tokens.append(c)
+            i += 1
+        elif isalnum(c) or c in "*/<>;:$_@":
+            start = i
+            while i < len(text) and (isalnum(text[i]) or text[i] in "*/<>;:$_@"):
+                i += 1
+            tokens.append(text[start:i])
+        else:
+            i += 1
+    return tokens
+
+
+class ScriptParser:
+    """Parser for miniscript, preserving type modifiers."""
+
+    def __init__(self, text: str) -> None:
+        self.tokens = tokenize(text)
+        self.pos = 0
+
+    def parse(self) -> ScriptNode:
+        stack: List[ScriptNode] = []
+        root: Optional[ScriptNode] = None
+
+        while self.pos < len(self.tokens):
+            token = self.tokens[self.pos]
+            self.pos += 1
+
+            if token == ",":
+                continue
+            elif token == ")":
+                if len(stack) > 1:
+                    stack.pop()
+                elif len(stack) == 1:
+                    root = stack.pop()
+                continue
+
+            if self.pos < len(self.tokens) and self.tokens[self.pos] == "(":
+                node = ScriptNode(token, SEMANTIC_OPERATOR)
+                self.pos += 1
+            else:
+                node = ScriptNode(token, SEMANTIC_OPERAND)
+
+            if len(stack) > 0:
+                parent = stack[len(stack) - 1]
+                parent.children.append(node)
+
+            if node.sem_type == SEMANTIC_OPERATOR:
+                stack.append(node)
+            elif root is None and len(stack) == 0:
+                root = node
+
+        if root is None and len(stack) > 0:
+            root = stack[0]
+
+        if root is None:
+            raise ValueError("Failed to parse script")
+
+        return root
