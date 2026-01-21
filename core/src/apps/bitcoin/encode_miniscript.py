@@ -1,6 +1,10 @@
 """
 Miniscript to Bitcoin Script encoder.
 
+Two-phase architecture:
+1. emit_fragment() generates an intermediate assembly (list of Instruction objects)
+2. assemble_bytecode() / assemble_text() converts assembly to final output
+
 Limitations vs full spec (bitcoin.sipa.be/miniscript):
 - Missing fragments: 0, 1, pk_h, ripemd160, hash256, and_n, multi_a
 - No type checking (assumes valid miniscript input)
@@ -9,7 +13,7 @@ Limitations vs full spec (bitcoin.sipa.be/miniscript):
 """
 
 try:
-    from typing import List, Optional, Tuple
+    from typing import List, Optional
 except ImportError:
     pass
 
@@ -19,12 +23,15 @@ except (ImportError, KeyError):
     from parse_miniscript import MiniscriptNode
 
 try:
-    from ubinascii import hexlify
+    from ubinascii import hexlify, unhexlify
     def _hex(data: bytes) -> str:
         return hexlify(data).decode()
 except ImportError:
     def _hex(data: bytes) -> str:
         return data.hex()
+    unhexlify = bytes.fromhex
+
+# Opcodes
 OP_0 = 0x00
 OP_1 = 0x51
 OP_16 = 0x60
@@ -45,6 +52,7 @@ OP_EQUALVERIFY = 0x88
 OP_0NOTEQUAL = 0x92
 OP_ADD = 0x93
 OP_SWAP = 0x7C
+OP_SHA256 = 0xA8
 OP_HASH160 = 0xA9
 OP_HASH256 = 0xAA
 OP_CHECKSIG = 0xAC
@@ -53,6 +61,8 @@ OP_CHECKMULTISIG = 0xAE
 OP_CHECKMULTISIGVERIFY = 0xAF
 OP_CSV = 0xB2  # OP_CHECKSEQUENCEVERIFY
 OP_CLTV = 0xB1  # OP_CHECKLOCKTIMEVERIFY
+OP_BOOLAND = 0x9A
+OP_BOOLOR = 0x9B
 
 # Opcode names for text output
 OPCODE_NAMES = {
@@ -74,6 +84,7 @@ OPCODE_NAMES = {
     OP_0NOTEQUAL: "OP_0NOTEQUAL",
     OP_ADD: "OP_ADD",
     OP_SWAP: "OP_SWAP",
+    OP_SHA256: "OP_SHA256",
     OP_HASH160: "OP_HASH160",
     OP_HASH256: "OP_HASH256",
     OP_CHECKSIG: "OP_CHECKSIG",
@@ -82,36 +93,57 @@ OPCODE_NAMES = {
     OP_CHECKMULTISIGVERIFY: "OP_CHECKMULTISIGVERIFY",
     OP_CSV: "OP_CSV",
     OP_CLTV: "OP_CLTV",
+    OP_BOOLAND: "OP_BOOLAND",
+    OP_BOOLOR: "OP_BOOLOR",
 }
 
-
-def push_number(n: int) -> Tuple[bytes, str]:
-    """Encode a number for Bitcoin Script, returns (bytecode, text)."""
-    if n == 0:
-        return bytes([OP_0]), "OP_0"
-    if 1 <= n <= 16:
-        return bytes([OP_1 + n - 1]), f"OP_PUSHNUM_{n}"
-    # For larger numbers, use minimal encoding
-    length = (n.bit_length() + 7) // 8
-    data = bytearray(n.to_bytes(length, "little"))
-    # If MSB is set, append 0x00 to keep positive
-    if data[-1] & 0x80:
-        data.append(0x00)
-    return bytes([len(data)]) + bytes(data), _hex(bytes(data))
+# OP_PUSHNUM_1 through OP_PUSHNUM_16
+for i in range(1, 17):
+    OPCODE_NAMES[OP_1 + i - 1] = f"OP_PUSHNUM_{i}"
 
 
-def push_bytes(data: bytes) -> Tuple[bytes, str]:
-    """Push arbitrary bytes onto the stack, returns (bytecode, text)."""
-    length = len(data)
-    hex_str = _hex(data)
-    if length < 0x4C:
-        return bytes([length]) + data, hex_str
-    elif length <= 0xFF:
-        return bytes([0x4C, length]) + data, hex_str
-    elif length <= 0xFFFF:
-        return bytes([0x4D, length & 0xFF, length >> 8]) + data, hex_str
-    else:
-        raise ValueError("Data too large to push")
+class Instruction:
+    """
+    Intermediate assembly instruction.
+
+    Types:
+    - OP: Single opcode (value is int opcode)
+    - PUSH_NUM: Push a number (value is int)
+    - PUSH_BYTES: Push raw bytes (value is bytes)
+    """
+    __slots__ = ("type", "int_value", "bytes_value")
+
+    OP = 0
+    PUSH_NUM = 1
+    PUSH_BYTES = 2
+
+    def __init__(self, type: int, int_value: int = 0, bytes_value: bytes = b""):
+        self.type = type
+        self.int_value = int_value
+        self.bytes_value = bytes_value
+
+    def __repr__(self) -> str:
+        if self.type == self.OP:
+            return f"OP({OPCODE_NAMES.get(self.int_value, hex(self.int_value))})"
+        elif self.type == self.PUSH_NUM:
+            return f"PUSH_NUM({self.int_value})"
+        else:
+            return f"PUSH_BYTES({_hex(self.bytes_value)})"
+
+
+def op(opcode: int) -> Instruction:
+    """Create an opcode instruction."""
+    return Instruction(Instruction.OP, int_value=opcode)
+
+
+def push_num(n: int) -> Instruction:
+    """Create a push number instruction."""
+    return Instruction(Instruction.PUSH_NUM, int_value=n)
+
+
+def push_bytes(data: bytes) -> Instruction:
+    """Create a push bytes instruction."""
+    return Instruction(Instruction.PUSH_BYTES, bytes_value=data)
 
 
 def derive_pubkey(
@@ -160,10 +192,6 @@ def derive_pubkey(
             path = ""
         else:
             # Raw hex pubkey
-            try:
-                from ubinascii import unhexlify
-            except ImportError:
-                unhexlify = bytes.fromhex
             return unhexlify(key_expr)
 
     # Derive from xpub
@@ -209,20 +237,20 @@ def hash160(data: bytes) -> bytes:
         return hashlib.new("ripemd160", sha).digest()
 
 
-def encode_fragment(
+def emit_fragment(
     node: MiniscriptNode,
     xpubs: Optional[List[str]] = None,
     change: int = 0,
     index: int = 0,
-) -> Tuple[bytes, List[str]]:
+) -> List[Instruction]:
     """
-    Encode a miniscript fragment to Bitcoin Script.
+    Emit assembly instructions for a miniscript fragment.
 
-    Returns (bytecode, text_parts) where text_parts is a list of opcode/data strings.
+    This is phase 1 of the two-phase encoding process.
+    Returns a list of Instruction objects representing the script.
     """
     val = node.value
-    bytecode = b""
-    text_parts: List[str] = []
+    instructions: List[Instruction] = []
 
     # Handle prefix wrappers first (applied after inner encoding)
     prefix = ""
@@ -234,197 +262,127 @@ def encode_fragment(
     if val in ("pk", "pk_k"):
         # pk(key) -> <key> CHECKSIG
         key = derive_pubkey(node.children[0].value, xpubs, change, index)
-        bc, txt = push_bytes(key)
-        bytecode += bc
-        text_parts.append(txt)
-        bytecode += bytes([OP_CHECKSIG])
-        text_parts.append("OP_CHECKSIG")
+        instructions.append(push_bytes(key))
+        instructions.append(op(OP_CHECKSIG))
 
     elif val == "pkh":
         # pkh(key) -> DUP HASH160 <HASH160(key)> EQUALVERIFY CHECKSIG
         key = derive_pubkey(node.children[0].value, xpubs, change, index)
         key_hash = hash160(key)
-        bytecode += bytes([OP_DUP, OP_HASH160])
-        text_parts.extend(["OP_DUP", "OP_HASH160"])
-        bc, txt = push_bytes(key_hash)
-        bytecode += bc
-        text_parts.append(txt)
-        bytecode += bytes([OP_EQUALVERIFY, OP_CHECKSIG])
-        text_parts.extend(["OP_EQUALVERIFY", "OP_CHECKSIG"])
+        instructions.append(op(OP_DUP))
+        instructions.append(op(OP_HASH160))
+        instructions.append(push_bytes(key_hash))
+        instructions.append(op(OP_EQUALVERIFY))
+        instructions.append(op(OP_CHECKSIG))
 
     elif val == "older":
         # older(n) -> <n> CSV
         n = int(node.children[0].value)
-        bc, txt = push_number(n)
-        bytecode += bc
-        text_parts.append(txt)
-        bytecode += bytes([OP_CSV])
-        text_parts.append("OP_CSV")
+        instructions.append(push_num(n))
+        instructions.append(op(OP_CSV))
 
     elif val == "after":
         # after(n) -> <n> CLTV
         n = int(node.children[0].value)
-        bc, txt = push_number(n)
-        bytecode += bc
-        text_parts.append(txt)
-        bytecode += bytes([OP_CLTV])
-        text_parts.append("OP_CLTV")
+        instructions.append(push_num(n))
+        instructions.append(op(OP_CLTV))
 
     elif val == "sha256":
         # sha256(h) -> SIZE 32 EQUALVERIFY SHA256 <h> EQUAL
-        h = node.children[0].value
-        try:
-            from ubinascii import unhexlify
-        except ImportError:
-            unhexlify = bytes.fromhex
-        h_bytes = unhexlify(h)
-        bytecode += bytes([OP_SIZE])
-        text_parts.append("OP_SIZE")
-        bc, txt = push_number(32)
-        bytecode += bc
-        text_parts.append(txt)
-        bytecode += bytes([OP_EQUALVERIFY, 0xA8])  # 0xA8 = OP_SHA256
-        text_parts.extend(["OP_EQUALVERIFY", "OP_SHA256"])
-        bc, txt = push_bytes(h_bytes)
-        bytecode += bc
-        text_parts.append(txt)
-        bytecode += bytes([OP_EQUAL])
-        text_parts.append("OP_EQUAL")
+        h_bytes = unhexlify(node.children[0].value)
+        instructions.append(op(OP_SIZE))
+        instructions.append(push_num(32))
+        instructions.append(op(OP_EQUALVERIFY))
+        instructions.append(op(OP_SHA256))
+        instructions.append(push_bytes(h_bytes))
+        instructions.append(op(OP_EQUAL))
 
     elif val == "hash160":
         # hash160(h) -> SIZE 32 EQUALVERIFY HASH160 <h> EQUAL
-        h = node.children[0].value
-        try:
-            from ubinascii import unhexlify
-        except ImportError:
-            unhexlify = bytes.fromhex
-        h_bytes = unhexlify(h)
-        bytecode += bytes([OP_SIZE])
-        text_parts.append("OP_SIZE")
-        bc, txt = push_number(32)
-        bytecode += bc
-        text_parts.append(txt)
-        bytecode += bytes([OP_EQUALVERIFY, OP_HASH160])
-        text_parts.extend(["OP_EQUALVERIFY", "OP_HASH160"])
-        bc, txt = push_bytes(h_bytes)
-        bytecode += bc
-        text_parts.append(txt)
-        bytecode += bytes([OP_EQUAL])
-        text_parts.append("OP_EQUAL")
+        h_bytes = unhexlify(node.children[0].value)
+        instructions.append(op(OP_SIZE))
+        instructions.append(push_num(32))
+        instructions.append(op(OP_EQUALVERIFY))
+        instructions.append(op(OP_HASH160))
+        instructions.append(push_bytes(h_bytes))
+        instructions.append(op(OP_EQUAL))
 
     elif val == "and_v":
         # and_v(X,Y) -> [X] [Y]
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
-        y_bc, y_txt = encode_fragment(node.children[1], xpubs, change, index)
-        bytecode += x_bc + y_bc
-        text_parts.extend(x_txt)
-        text_parts.extend(y_txt)
+        instructions.extend(emit_fragment(node.children[0], xpubs, change, index))
+        instructions.extend(emit_fragment(node.children[1], xpubs, change, index))
 
     elif val == "and_b":
         # and_b(X,Y) -> [X] [Y] BOOLAND
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
-        y_bc, y_txt = encode_fragment(node.children[1], xpubs, change, index)
-        bytecode += x_bc + y_bc + bytes([0x9A])  # 0x9A = OP_BOOLAND
-        text_parts.extend(x_txt)
-        text_parts.extend(y_txt)
-        text_parts.append("OP_BOOLAND")
+        instructions.extend(emit_fragment(node.children[0], xpubs, change, index))
+        instructions.extend(emit_fragment(node.children[1], xpubs, change, index))
+        instructions.append(op(OP_BOOLAND))
 
     elif val == "or_b":
         # or_b(X,Z) -> [X] [Z] BOOLOR
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
-        z_bc, z_txt = encode_fragment(node.children[1], xpubs, change, index)
-        bytecode += x_bc + z_bc + bytes([0x9B])  # 0x9B = OP_BOOLOR
-        text_parts.extend(x_txt)
-        text_parts.extend(z_txt)
-        text_parts.append("OP_BOOLOR")
+        instructions.extend(emit_fragment(node.children[0], xpubs, change, index))
+        instructions.extend(emit_fragment(node.children[1], xpubs, change, index))
+        instructions.append(op(OP_BOOLOR))
 
     elif val == "or_c":
         # or_c(X,Z) -> [X] NOTIF [Z] ENDIF
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
-        z_bc, z_txt = encode_fragment(node.children[1], xpubs, change, index)
-        bytecode += x_bc + bytes([OP_NOTIF]) + z_bc + bytes([OP_ENDIF])
-        text_parts.extend(x_txt)
-        text_parts.append("OP_NOTIF")
-        text_parts.extend(z_txt)
-        text_parts.append("OP_ENDIF")
+        instructions.extend(emit_fragment(node.children[0], xpubs, change, index))
+        instructions.append(op(OP_NOTIF))
+        instructions.extend(emit_fragment(node.children[1], xpubs, change, index))
+        instructions.append(op(OP_ENDIF))
 
     elif val == "or_d":
         # or_d(X,Z) -> [X] IFDUP NOTIF [Z] ENDIF
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
-        z_bc, z_txt = encode_fragment(node.children[1], xpubs, change, index)
-        bytecode += x_bc + bytes([OP_IFDUP, OP_NOTIF]) + z_bc + bytes([OP_ENDIF])
-        text_parts.extend(x_txt)
-        text_parts.extend(["OP_IFDUP", "OP_NOTIF"])
-        text_parts.extend(z_txt)
-        text_parts.append("OP_ENDIF")
+        instructions.extend(emit_fragment(node.children[0], xpubs, change, index))
+        instructions.append(op(OP_IFDUP))
+        instructions.append(op(OP_NOTIF))
+        instructions.extend(emit_fragment(node.children[1], xpubs, change, index))
+        instructions.append(op(OP_ENDIF))
 
     elif val == "or_i":
         # or_i(X,Z) -> IF [X] ELSE [Z] ENDIF
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
-        z_bc, z_txt = encode_fragment(node.children[1], xpubs, change, index)
-        bytecode += bytes([OP_IF]) + x_bc + bytes([OP_ELSE]) + z_bc + bytes([OP_ENDIF])
-        text_parts.append("OP_IF")
-        text_parts.extend(x_txt)
-        text_parts.append("OP_ELSE")
-        text_parts.extend(z_txt)
-        text_parts.append("OP_ENDIF")
+        instructions.append(op(OP_IF))
+        instructions.extend(emit_fragment(node.children[0], xpubs, change, index))
+        instructions.append(op(OP_ELSE))
+        instructions.extend(emit_fragment(node.children[1], xpubs, change, index))
+        instructions.append(op(OP_ENDIF))
 
     elif val == "andor":
         # andor(X,Y,Z) -> [X] NOTIF [Z] ELSE [Y] ENDIF
-        x_bc, x_txt = encode_fragment(node.children[0], xpubs, change, index)
-        y_bc, y_txt = encode_fragment(node.children[1], xpubs, change, index)
-        z_bc, z_txt = encode_fragment(node.children[2], xpubs, change, index)
-        bytecode += x_bc + bytes([OP_NOTIF]) + z_bc + bytes([OP_ELSE]) + y_bc + bytes([OP_ENDIF])
-        text_parts.extend(x_txt)
-        text_parts.append("OP_NOTIF")
-        text_parts.extend(z_txt)
-        text_parts.append("OP_ELSE")
-        text_parts.extend(y_txt)
-        text_parts.append("OP_ENDIF")
+        instructions.extend(emit_fragment(node.children[0], xpubs, change, index))
+        instructions.append(op(OP_NOTIF))
+        instructions.extend(emit_fragment(node.children[2], xpubs, change, index))
+        instructions.append(op(OP_ELSE))
+        instructions.extend(emit_fragment(node.children[1], xpubs, change, index))
+        instructions.append(op(OP_ENDIF))
 
     elif val == "thresh":
         # thresh(k,X1,...,Xn) -> [X1] [X2] ADD ... [Xn] ADD <k> EQUAL
         k = int(node.children[0].value)
         subs = node.children[1:]
         if len(subs) > 0:
-            first_bc, first_txt = encode_fragment(subs[0], xpubs, change, index)
-            bytecode += first_bc
-            text_parts.extend(first_txt)
+            instructions.extend(emit_fragment(subs[0], xpubs, change, index))
             for sub in subs[1:]:
-                sub_bc, sub_txt = encode_fragment(sub, xpubs, change, index)
-                bytecode += sub_bc + bytes([OP_ADD])
-                text_parts.extend(sub_txt)
-                text_parts.append("OP_ADD")
-        bc, txt = push_number(k)
-        bytecode += bc
-        text_parts.append(txt)
-        bytecode += bytes([OP_EQUAL])
-        text_parts.append("OP_EQUAL")
+                instructions.extend(emit_fragment(sub, xpubs, change, index))
+                instructions.append(op(OP_ADD))
+        instructions.append(push_num(k))
+        instructions.append(op(OP_EQUAL))
 
     elif val == "multi":
         # multi(k,key1,...,keyn) -> <k> <key1> ... <keyn> <n> CHECKMULTISIG
         k = int(node.children[0].value)
         keys = [derive_pubkey(c.value, xpubs, change, index) for c in node.children[1:]]
         n = len(keys)
-        bc, txt = push_number(k)
-        bytecode += bc
-        text_parts.append(txt)
+        instructions.append(push_num(k))
         for key in keys:
-            bc, txt = push_bytes(key)
-            bytecode += bc
-            text_parts.append(txt)
-        bc, txt = push_number(n)
-        bytecode += bc
-        text_parts.append(txt)
-        bytecode += bytes([OP_CHECKMULTISIG])
-        text_parts.append("OP_CHECKMULTISIG")
+            instructions.append(push_bytes(key))
+        instructions.append(push_num(n))
+        instructions.append(op(OP_CHECKMULTISIG))
 
     elif val in ("wsh", "sh"):
         # Descriptor wrappers - just encode the inner miniscript
         if node.children:
-            inner_bc, inner_txt = encode_fragment(node.children[0], xpubs, change, index)
-            bytecode += inner_bc
-            text_parts.extend(inner_txt)
+            instructions.extend(emit_fragment(node.children[0], xpubs, change, index))
 
     else:
         raise ValueError(f"Unknown miniscript fragment: {val}")
@@ -433,57 +391,122 @@ def encode_fragment(
     for p in prefix:
         if p == "a":
             # a:X -> TOALTSTACK [X] FROMALTSTACK
-            bytecode = bytes([OP_TOALTSTACK]) + bytecode + bytes([OP_FROMALTSTACK])
-            text_parts = ["OP_TOALTSTACK"] + text_parts + ["OP_FROMALTSTACK"]
+            instructions = [op(OP_TOALTSTACK)] + instructions + [op(OP_FROMALTSTACK)]
         elif p == "s":
             # s:X -> SWAP [X]
-            bytecode = bytes([OP_SWAP]) + bytecode
-            text_parts = ["OP_SWAP"] + text_parts
+            instructions = [op(OP_SWAP)] + instructions
         elif p == "c":
             # c:X -> [X] CHECKSIG
-            bytecode = bytecode + bytes([OP_CHECKSIG])
-            text_parts = text_parts + ["OP_CHECKSIG"]
+            instructions = instructions + [op(OP_CHECKSIG)]
         elif p == "d":
             # d:X -> DUP IF [X] ENDIF
-            bytecode = bytes([OP_DUP, OP_IF]) + bytecode + bytes([OP_ENDIF])
-            text_parts = ["OP_DUP", "OP_IF"] + text_parts + ["OP_ENDIF"]
+            instructions = [op(OP_DUP), op(OP_IF)] + instructions + [op(OP_ENDIF)]
         elif p == "v":
             # v:X -> [X] VERIFY (or combine with last opcode)
-            # Special case: CHECKSIG -> CHECKSIGVERIFY, etc.
-            if bytecode and bytecode[-1] == OP_CHECKSIG:
-                bytecode = bytecode[:-1] + bytes([OP_CHECKSIGVERIFY])
-                text_parts = text_parts[:-1] + ["OP_CHECKSIGVERIFY"]
-            elif bytecode and bytecode[-1] == OP_CHECKMULTISIG:
-                bytecode = bytecode[:-1] + bytes([OP_CHECKMULTISIGVERIFY])
-                text_parts = text_parts[:-1] + ["OP_CHECKMULTISIGVERIFY"]
-            elif bytecode and bytecode[-1] == OP_EQUAL:
-                bytecode = bytecode[:-1] + bytes([OP_EQUALVERIFY])
-                text_parts = text_parts[:-1] + ["OP_EQUALVERIFY"]
+            if instructions and instructions[-1].type == Instruction.OP:
+                last_op = instructions[-1].int_value
+                if last_op == OP_CHECKSIG:
+                    instructions[-1] = op(OP_CHECKSIGVERIFY)
+                elif last_op == OP_CHECKMULTISIG:
+                    instructions[-1] = op(OP_CHECKMULTISIGVERIFY)
+                elif last_op == OP_EQUAL:
+                    instructions[-1] = op(OP_EQUALVERIFY)
+                else:
+                    instructions.append(op(OP_VERIFY))
             else:
-                bytecode = bytecode + bytes([OP_VERIFY])
-                text_parts = text_parts + ["OP_VERIFY"]
+                instructions.append(op(OP_VERIFY))
         elif p == "j":
             # j:X -> SIZE 0NOTEQUAL IF [X] ENDIF
-            bytecode = bytes([OP_SIZE, OP_0NOTEQUAL, OP_IF]) + bytecode + bytes([OP_ENDIF])
-            text_parts = ["OP_SIZE", "OP_0NOTEQUAL", "OP_IF"] + text_parts + ["OP_ENDIF"]
+            instructions = [op(OP_SIZE), op(OP_0NOTEQUAL), op(OP_IF)] + instructions + [op(OP_ENDIF)]
         elif p == "n":
             # n:X -> [X] 0NOTEQUAL
-            bytecode = bytecode + bytes([OP_0NOTEQUAL])
-            text_parts = text_parts + ["OP_0NOTEQUAL"]
+            instructions = instructions + [op(OP_0NOTEQUAL)]
         elif p == "l":
             # l:X -> IF 0 ELSE [X] ENDIF (same as or_i(0,X))
-            bytecode = bytes([OP_IF, OP_0, OP_ELSE]) + bytecode + bytes([OP_ENDIF])
-            text_parts = ["OP_IF", "OP_0", "OP_ELSE"] + text_parts + ["OP_ENDIF"]
+            instructions = [op(OP_IF), op(OP_0), op(OP_ELSE)] + instructions + [op(OP_ENDIF)]
         elif p == "u":
             # u:X -> IF [X] ELSE 0 ENDIF (same as or_i(X,0))
-            bytecode = bytes([OP_IF]) + bytecode + bytes([OP_ELSE, OP_0, OP_ENDIF])
-            text_parts = ["OP_IF"] + text_parts + ["OP_ELSE", "OP_0", "OP_ENDIF"]
+            instructions = [op(OP_IF)] + instructions + [op(OP_ELSE), op(OP_0), op(OP_ENDIF)]
         elif p == "t":
             # t:X -> [X] 1 (same as and_v(X,1))
-            bytecode = bytecode + bytes([OP_1])
-            text_parts = text_parts + ["OP_PUSHNUM_1"]
+            instructions = instructions + [op(OP_1)]
 
-    return bytecode, text_parts
+    return instructions
+
+
+def assemble_bytecode(instructions: List[Instruction]) -> bytes:
+    """
+    Assemble instructions to bytecode.
+
+    This is phase 2a of the two-phase encoding process.
+    """
+    result = b""
+
+    for instr in instructions:
+        if instr.type == Instruction.OP:
+            result += bytes([instr.int_value])
+        elif instr.type == Instruction.PUSH_NUM:
+            n = instr.int_value
+            if n == 0:
+                result += bytes([OP_0])
+            elif 1 <= n <= 16:
+                result += bytes([OP_1 + n - 1])
+            else:
+                # Minimal encoding for larger numbers
+                length = (n.bit_length() + 7) // 8
+                data = bytearray(n.to_bytes(length, "little"))
+                # If MSB is set, append 0x00 to keep positive
+                if data[-1] & 0x80:
+                    data.append(0x00)
+                result += bytes([len(data)]) + bytes(data)
+        elif instr.type == Instruction.PUSH_BYTES:
+            data = instr.bytes_value
+            length = len(data)
+            if length < 0x4C:
+                result += bytes([length]) + data
+            elif length <= 0xFF:
+                result += bytes([0x4C, length]) + data
+            elif length <= 0xFFFF:
+                result += bytes([0x4D, length & 0xFF, length >> 8]) + data
+            else:
+                raise ValueError("Data too large to push")
+
+    return result
+
+
+def assemble_asm(instructions: List[Instruction]) -> str:
+    """
+    Assemble instructions to human-readable assembly text.
+
+    This is phase 2b of the two-phase encoding process.
+    """
+    parts: List[str] = []
+
+    for instr in instructions:
+        if instr.type == Instruction.OP:
+            parts.append(OPCODE_NAMES.get(instr.int_value, f"0x{instr.int_value:02x}"))
+        elif instr.type == Instruction.PUSH_NUM:
+            n = instr.int_value
+            if n == 0:
+                parts.append("OP_0")
+            elif 1 <= n <= 16:
+                parts.append(f"OP_PUSHNUM_{n}")
+            else:
+                # Show raw hex for larger numbers
+                length = (n.bit_length() + 7) // 8
+                data = bytearray(n.to_bytes(length, "little"))
+                if data[-1] & 0x80:
+                    data.append(0x00)
+                parts.append(_hex(bytes(data)))
+        elif instr.type == Instruction.PUSH_BYTES:
+            parts.append(_hex(instr.bytes_value))
+
+    return " ".join(parts)
+
+
+# Output format constants
+FORMAT_BYTECODE = "bytecode"
+FORMAT_ASM = "asm"
 
 
 def encode_miniscript(
@@ -491,19 +514,30 @@ def encode_miniscript(
     xpubs: Optional[List[str]] = None,
     change: int = 0,
     index: int = 0,
-) -> Tuple[bytes, str]:
+    format: str = FORMAT_BYTECODE,
+):
     """
     Encode a miniscript tree to Bitcoin Script.
+
+    Two-phase process:
+    1. emit_fragment() generates intermediate assembly
+    2. assemble_bytecode() or assemble_asm() produces final output
 
     Args:
         node: Parsed MiniscriptNode tree
         xpubs: Optional list of xpub strings for resolving @N references
         change: Value to use for <M;N> ranges in key paths (0 or 1)
         index: Value to use for * wildcard in key paths
+        format: Output format - "bytecode" (default) or "asm"
 
     Returns:
-        Tuple of (bytecode, text_representation)
+        bytes if format="bytecode", str if format="asm"
     """
-    bytecode, text_parts = encode_fragment(node, xpubs, change, index)
-    text = " ".join(text_parts)
-    return bytecode, text
+    # Phase 1: Generate assembly
+    instructions = emit_fragment(node, xpubs, change, index)
+
+    # Phase 2: Assemble to requested format
+    if format == FORMAT_ASM:
+        return assemble_asm(instructions)
+    else:
+        return assemble_bytecode(instructions)

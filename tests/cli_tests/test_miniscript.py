@@ -5,7 +5,7 @@ sys.path.insert(0, "../../core/src/apps/bitcoin")
 
 from parse_miniscript import parse_miniscript
 from policy_rules import abbreviate_xpubs, format_tree, get_spending_rules
-from encode_miniscript import encode_miniscript, derive_pubkey
+from encode_miniscript import encode_miniscript, derive_pubkey, FORMAT_ASM
 from bip32_utils import derive_pubkey_from_xpub
 
 # Monkey-patch derive_pubkey to use our standalone bip32_utils
@@ -74,8 +74,9 @@ for rule in get_spending_rules(root, abbreviate_xpubs(xpubs)):
     print(rule)
 
 print("\nEncoded (with xpub derivation):")
-bytecode, text = encode_miniscript(root, xpubs)
-print("Text:", text)
+bytecode = encode_miniscript(root, xpubs)
+asm = encode_miniscript(root, xpubs, format=FORMAT_ASM)
+print("Asm:", asm)
 print("Hex:", bytecode.hex())
 
 print("\n" + "=" * 60)
@@ -89,13 +90,13 @@ expected = "03adc58245cf28406af0ef5cc24b8afba7f1be6c72f279b642d85c48798685f862 O
 print("Input:", miniscript_exact[:60] + "...")
 
 root = parse_miniscript(miniscript_exact)
-bytecode, text = encode_miniscript(root)
+asm = encode_miniscript(root, format=FORMAT_ASM)
 
-print("Output:", text)
+print("Output:", asm)
 print("Expected:", expected)
 print()
 
-if text == expected:
+if asm == expected:
     print("✓ PASS: Output matches expected")
 else:
     print("✗ FAIL: Output differs")

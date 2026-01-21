@@ -61,7 +61,7 @@ async def get_policy_address(
     #)
 
     parsed_script = parse_miniscript(msg.policy.template)
-    script, _ = encode_miniscript(
+    script = encode_miniscript(
         parsed_script,
         list(msg.policy.xpubs),
         change=int(msg.change),
