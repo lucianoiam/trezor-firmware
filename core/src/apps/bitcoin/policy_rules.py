@@ -14,10 +14,10 @@ def format_condition(node: MiniscriptNode, xpubs: Optional[List[str]] = None) ->
     val = node.normalized_value
     if val == "pk":
         for c in node.children:
-            return "provides signature " + c.value
+            return "signs with " + c.value
     elif val == "older":
         for c in node.children:
-            return "ensures coins older than " + c.value + " blk"
+            return "coins older than " + c.value + " blk"
     return val
 
 
@@ -62,10 +62,10 @@ def get_spending_rules(node: MiniscriptNode, xpubs: Optional[List[str]] = None) 
                 if len(conditions) == 1:
                     raw_paths.append(conditions[0])
                 else:
-                    path_text = "both " + conditions[0]
+                    path_text = conditions[0]
                     for i in range(1, len(conditions)):
                         if i == len(conditions) - 1:
-                            path_text = path_text + ", and " + conditions[i]
+                            path_text = path_text + " and " + conditions[i]
                         else:
                             path_text = path_text + ", " + conditions[i]
                     raw_paths.append(path_text)
@@ -74,11 +74,10 @@ def get_spending_rules(node: MiniscriptNode, xpubs: Optional[List[str]] = None) 
 
     paths: List[str] = []
     for i in range(len(raw_paths)):
-        path_num = i + 1
-        if path_num == 1:
-            paths.append(str(path_num) + ". Spend if " + raw_paths[i])
+        if i == 0:
+            paths.append("Spend if " + raw_paths[i])
         else:
-            paths.append(str(path_num) + ". Alternatively, spend if " + raw_paths[i])
+            paths.append("Also spend if " + raw_paths[i])
 
     return paths
 

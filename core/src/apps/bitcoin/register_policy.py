@@ -16,7 +16,7 @@ async def register_policy(
     from trezor import protobuf
     from trezor.crypto import hmac
     from trezor.messages import PolicyRegistration
-    from trezor.ui.layouts import confirm_action, confirm_value, show_success
+    from trezor.ui.layouts import confirm_action, confirm_value
     from .parse_miniscript import parse_miniscript
     from .policy_rules import get_spending_rules
 
@@ -27,7 +27,7 @@ async def register_policy(
         await confirm_action(
             "/bitcoin/miniscript/register_policy",
             "Inheritance wallet setup",
-            action=f'Rule {i + 1}',
+            action=f'Rule #{i + 1}',
             description=rule,
         )
 
