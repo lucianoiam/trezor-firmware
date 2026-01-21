@@ -9,6 +9,13 @@ except (ImportError, KeyError):
     from parse_miniscript import MiniscriptNode, SEMANTIC_OPERATOR
 
 
+def capitalize(s: str) -> str:
+    """Capitalize first character of string."""
+    if len(s) == 0:
+        return s
+    return s[0].upper() + s[1:]
+
+
 def resolve_key(key_expr: str, xpubs: Optional[List[str]] = None, abbrev: bool = True) -> str:
     """Resolve @N references to actual xpub, stripping derivation path."""
     if key_expr.startswith("@") and xpubs is not None:
@@ -89,14 +96,7 @@ def get_spending_rules(node: MiniscriptNode, xpubs: Optional[List[str]] = None) 
         else:
             raw_paths.append(format_condition(n, xpubs))
 
-    paths: List[str] = []
-    for i in range(len(raw_paths)):
-        if i == 0:
-            paths.append("Spend if " + raw_paths[i])
-        else:
-            paths.append("Also spend if " + raw_paths[i])
-
-    return paths
+    return raw_paths
 
 
 def format_tree(node: MiniscriptNode, normalize: bool = False) -> str:
