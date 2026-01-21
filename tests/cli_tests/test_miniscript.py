@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, "../../core/src/apps/bitcoin")
 
 from parse_miniscript import parse_miniscript
-from policy_rules import capitalize, format_tree, get_spending_rules
+from policy_rules import abbreviate_xpubs, format_tree, get_spending_rules
 from encode_miniscript import encode_miniscript, derive_pubkey
 from bip32_utils import derive_pubkey_from_xpub
 
@@ -57,9 +57,9 @@ print(format_tree(root))
 print("Policy tree (normalized):")
 print(format_tree(root, normalize=True))
 
-print("Spending rules (with xpubs):")
-for rule in get_spending_rules(root, xpubs):
-    print(capitalize(rule))
+print("Spending rules (with abbreviated xpubs):")
+for rule in get_spending_rules(root, abbreviate_xpubs(xpubs)):
+    print(rule)
 
 print("\nEncoded (with xpub derivation):")
 bytecode, text = encode_miniscript(root, xpubs)

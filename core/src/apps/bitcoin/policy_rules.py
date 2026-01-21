@@ -16,7 +16,12 @@ def capitalize(s: str) -> str:
     return s[0].upper() + s[1:]
 
 
-def resolve_key(key_expr: str, xpubs: Optional[List[str]] = None, abbrev: bool = True) -> str:
+def abbreviate_xpubs(xpubs: List[str]) -> List[str]:
+    """Return abbreviated xpubs, keeping only last 8 chars."""
+    return ["..." + x[-8:] for x in xpubs]
+
+
+def resolve_key(key_expr: str, xpubs: Optional[List[str]] = None) -> str:
     """Resolve @N references to actual xpub, stripping derivation path."""
     if key_expr.startswith("@") and xpubs is not None:
         rest = key_expr[1:]
@@ -26,10 +31,7 @@ def resolve_key(key_expr: str, xpubs: Optional[List[str]] = None, abbrev: bool =
         else:
             idx = int(rest[:slash_idx])
         if idx < len(xpubs):
-            key = xpubs[idx]
-            if abbrev:
-                return "..." + key[-8:]
-            return key
+            return xpubs[idx]
     return key_expr
 
 
@@ -96,7 +98,7 @@ def get_spending_rules(node: MiniscriptNode, xpubs: Optional[List[str]] = None) 
         else:
             raw_paths.append(format_condition(n, xpubs))
 
-    return raw_paths
+    return [capitalize(p) for p in raw_paths]
 
 
 def format_tree(node: MiniscriptNode, normalize: bool = False) -> str:
