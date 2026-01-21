@@ -1,14 +1,24 @@
+"""
+Miniscript to Bitcoin Script encoder.
+
+Limitations vs full spec (bitcoin.sipa.be/miniscript):
+- Missing fragments: 0, 1, pk_h, ripemd160, hash256, and_n, multi_a
+- No type checking (assumes valid miniscript input)
+- No script size/ops limits validation
+- Key derivation requires trezor.crypto.bip32 (no WIF keys)
+- Wildcards (*) in paths are skipped, not expanded
+- Ranges (<M;N>) use first value only
+"""
+
 try:
     from typing import List, Optional, Tuple
 except ImportError:
     pass
 
 try:
-    from .parse_miniscript import MiniscriptNode, SEMANTIC_OPERATOR
+    from .parse_miniscript import MiniscriptNode
 except (ImportError, KeyError):
-    from parse_miniscript import MiniscriptNode, SEMANTIC_OPERATOR
-
-# Bitcoin Script opcodes
+    from parse_miniscript import MiniscriptNode
 OP_0 = 0x00
 OP_1 = 0x51
 OP_16 = 0x60

@@ -1,3 +1,17 @@
+"""
+Miniscript parser.
+
+Limitations vs full spec (bitcoin.sipa.be/miniscript):
+- No validation of fragment types (B, V, K, W) or correctness properties
+- No script size/ops limits checking
+- Treats all key expressions as opaque strings (no WIF/descriptor key parsing)
+- Does not verify timelock mixing rules (absolute vs relative)
+- Fragments 0, 1, ripemd160, hash256 parsed but not normalized
+- No taproot/multi_a support
+
+Accepts output descriptors (wsh, sh) which are discarded during normalization.
+"""
+
 try:
     from typing import List, Optional
 except ImportError:
@@ -7,10 +21,6 @@ SEMANTIC_OPERATOR = 0
 SEMANTIC_OPERAND = 1
 
 ALNUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-# This parser accepts output descriptors containing miniscript (e.g. wsh(...), sh(...)).
-# Descriptor wrappers are parsed but discarded during normalization, as only the
-# miniscript content is relevant for spending path analysis and script encoding.
 
 
 def isalnum(c: str) -> bool:
