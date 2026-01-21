@@ -9,12 +9,29 @@ except (ImportError, KeyError):
     from parse_miniscript import MiniscriptNode, SEMANTIC_OPERATOR
 
 
+def resolve_key(key_expr: str, xpubs: Optional[List[str]] = None, abbrev: bool = True) -> str:
+    """Resolve @N references to actual xpub, stripping derivation path."""
+    if key_expr.startswith("@") and xpubs is not None:
+        rest = key_expr[1:]
+        slash_idx = rest.find("/")
+        if slash_idx == -1:
+            idx = int(rest)
+        else:
+            idx = int(rest[:slash_idx])
+        if idx < len(xpubs):
+            key = xpubs[idx]
+            if abbrev:
+                return "..." + key[-8:]
+            return key
+    return key_expr
+
+
 def format_condition(node: MiniscriptNode, xpubs: Optional[List[str]] = None) -> str:
     """Get human-readable condition for a leaf node."""
     val = node.normalized_value
     if val == "pk":
         for c in node.children:
-            return "signs with " + c.value
+            return "signs with " + resolve_key(c.value, xpubs)
     elif val == "older":
         for c in node.children:
             return "coins older than " + c.value + " blk"

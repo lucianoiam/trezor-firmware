@@ -57,8 +57,8 @@ print(format_tree(root))
 print("Policy tree (normalized):")
 print(format_tree(root, normalize=True))
 
-print("Spending rules:")
-for rule in get_spending_rules(root):
+print("Spending rules (with xpubs):")
+for rule in get_spending_rules(root, xpubs):
     print(rule)
 
 print("\nEncoded (with xpub derivation):")
