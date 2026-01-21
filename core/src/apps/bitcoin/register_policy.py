@@ -17,10 +17,11 @@ async def register_policy(
     from trezor.crypto import hmac
     from trezor.messages import PolicyRegistration
     from trezor.ui.layouts import confirm_action, confirm_value, show_success
-    from .policy_parser import PolicyParser, miniscript_to_policy
+    from .parse_miniscript import parse_miniscript
+    from .policy_rules import get_spending_rules
 
-    policy = miniscript_to_policy(msg.template)
-    rules = PolicyParser(policy).parse().rules_repr()
+    miniscript = parse_miniscript(msg.template)
+    rules = get_spending_rules(miniscript, xpubs=msg.xpubs)
 
     for i, rule in enumerate(rules):
         await confirm_action(
