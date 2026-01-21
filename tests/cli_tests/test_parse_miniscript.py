@@ -2,17 +2,17 @@
 import sys
 sys.path.insert(0, "../../core/src/apps/bitcoin")
 
-from parse_script import parse_script, tree_repr, get_spending_paths
+from parse_miniscript import parse_miniscript, tree_repr, get_spending_paths
 
-script = "wsh(or_d(pk(@0/<0;1>/*),and_v(v:pkh(@1/<0;1>/*),older(1))))"
+miniscript = "wsh(or_d(pk(@0/<0;1>/*),and_v(v:pkh(@1/<0;1>/*),older(1))))"
 
-print("--- Script ---")
-print(script)
+print("--- Miniscript ---")
+print(miniscript)
 
 # Parse once
-root = parse_script(script)
+root = parse_miniscript(miniscript)
 
-print("\n--- Script Tree (raw) ---")
+print("\n--- Miniscript Tree (raw) ---")
 print(tree_repr(root))
 
 print("--- Policy Tree (normalized) ---")

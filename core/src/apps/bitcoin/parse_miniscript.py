@@ -8,23 +8,27 @@ SEMANTIC_OPERAND = 1
 
 ALNUM = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+# This parser accepts output descriptors containing miniscript (e.g. wsh(...), sh(...)).
+# Descriptor wrappers are parsed but discarded during normalization, as only the
+# miniscript content is relevant for spending path analysis and script encoding.
+
 
 def isalnum(c: str) -> bool:
     return c in ALNUM
 
 
-class ScriptNode:
+class MiniscriptNode:
     """Node representing a miniscript fragment, preserving type modifiers."""
 
     def __init__(
         self,
         value: str,
         sem_type: int,
-        children: Optional[List["ScriptNode"]] = None,
+        children: Optional[List["MiniscriptNode"]] = None,
     ) -> None:
         self.value = value
         self.sem_type = sem_type
-        self.children: List["ScriptNode"] = children if children else []
+        self.children: List["MiniscriptNode"] = children if children else []
 
     @property
     def normalized_value(self) -> str:
@@ -67,12 +71,12 @@ def tokenize(text: str) -> List[str]:
     return tokens
 
 
-def parse_script(text: str) -> ScriptNode:
-    """Parse miniscript text into a ScriptNode tree."""
+def parse_miniscript(text: str) -> MiniscriptNode:
+    """Parse miniscript text into a MiniscriptNode tree."""
     tokens = tokenize(text)
     pos = 0
-    stack: List[ScriptNode] = []
-    root: Optional[ScriptNode] = None
+    stack: List[MiniscriptNode] = []
+    root: Optional[MiniscriptNode] = None
 
     while pos < len(tokens):
         token = tokens[pos]
@@ -88,10 +92,10 @@ def parse_script(text: str) -> ScriptNode:
             continue
 
         if pos < len(tokens) and tokens[pos] == "(":
-            node = ScriptNode(token, SEMANTIC_OPERATOR)
+            node = MiniscriptNode(token, SEMANTIC_OPERATOR)
             pos += 1
         else:
-            node = ScriptNode(token, SEMANTIC_OPERAND)
+            node = MiniscriptNode(token, SEMANTIC_OPERAND)
 
         if len(stack) > 0:
             parent = stack[len(stack) - 1]
@@ -106,12 +110,12 @@ def parse_script(text: str) -> ScriptNode:
         root = stack[0]
 
     if root is None:
-        raise ValueError("Failed to parse script")
+        raise ValueError("Failed to parse miniscript")
 
     return root
 
 
-def get_condition_text(node: ScriptNode, xpubs: Optional[List[str]] = None) -> str:
+def get_condition_text(node: MiniscriptNode, xpubs: Optional[List[str]] = None) -> str:
     """Get human-readable condition for a leaf node."""
     val = node.normalized_value
     if val == "pk":
@@ -123,10 +127,10 @@ def get_condition_text(node: ScriptNode, xpubs: Optional[List[str]] = None) -> s
     return val
 
 
-def collect_and_conditions(node: ScriptNode, xpubs: Optional[List[str]] = None) -> List[str]:
+def collect_and_conditions(node: MiniscriptNode, xpubs: Optional[List[str]] = None) -> List[str]:
     """Collect all conditions under an AND node."""
     conditions: List[str] = []
-    stack: List[ScriptNode] = [node]
+    stack: List[MiniscriptNode] = [node]
 
     while len(stack) > 0:
         n = stack.pop()
@@ -139,10 +143,10 @@ def collect_and_conditions(node: ScriptNode, xpubs: Optional[List[str]] = None) 
     return conditions
 
 
-def get_spending_paths(node: ScriptNode, xpubs: Optional[List[str]] = None) -> List[str]:
+def get_spending_paths(node: MiniscriptNode, xpubs: Optional[List[str]] = None) -> List[str]:
     """Build spending paths by traversing OR branches."""
     raw_paths: List[str] = []
-    stack: List[ScriptNode] = [node]
+    stack: List[MiniscriptNode] = [node]
 
     while len(stack) > 0:
         n = stack.pop()
@@ -185,7 +189,7 @@ def get_spending_paths(node: ScriptNode, xpubs: Optional[List[str]] = None) -> L
     return paths
 
 
-def tree_repr(node: ScriptNode, normalize: bool = False) -> str:
+def tree_repr(node: MiniscriptNode, normalize: bool = False) -> str:
     """Iterative tree representation."""
     lines: List[str] = []
     stack: List[tuple] = [(node, "", True, True)]
